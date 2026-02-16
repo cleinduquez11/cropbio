@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+
+
+
+  <!-- Circular Emblem -->
+  <circle cx="200" cy="200" r="120" fill="none" stroke="url(#greenGradient)" stroke-width="10"/>
+
+  <!-- Wheat Stem -->
+  <line x1="150" y1="60" x2="150" y2="240"
+        stroke="#D4A017"
+        stroke-width="6"
+        stroke-linecap="round"/>
+
+  <!-- Wheat Grains Left -->
+  <ellipse cx="130" cy="90" rx="18" ry="10" fill="#F4C430" transform="rotate(-35 130 90)"/>
+  <ellipse cx="130" cy="120" rx="18" ry="10" fill="#F4C430" transform="rotate(-35 130 120)"/>
+  <ellipse cx="130" cy="150" rx="18" ry="10" fill="#F4C430" transform="rotate(-35 130 150)"/>
+  <ellipse cx="130" cy="180" rx="18" ry="10" fill="#F4C430" transform="rotate(-35 130 180)"/>
+
+  <!-- Wheat Grains Right -->
+  <ellipse cx="170" cy="105" rx="18" ry="10" fill="#F4C430" transform="rotate(35 170 105)"/>
+  <ellipse cx="170" cy="135" rx="18" ry="10" fill="#F4C430" transform="rotate(35 170 135)"/>
+  <ellipse cx="170" cy="165" rx="18" ry="10" fill="#F4C430" transform="rotate(35 170 165)"/>
+  <ellipse cx="170" cy="195" rx="18" ry="10" fill="#F4C430" transform="rotate(35 170 195)"/>
+
+
+  <!-- Brand Text -->
+  <text x="380" y="220"
+        font-family="Poppins, Arial, sans-serif"
+        font-size="110"
+        font-weight="700"
+        fill="#2ECC71">
+    Crop<tspan fill="url(#goldGradient)">Bio</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="385" y="270"
+        font-family="Poppins, Arial, sans-serif"
+        font-size="28"
+        fill="#FFFFFF"
+        letter-spacing="3">
+    MMSU • BATAC • ILOCOS NORTE
+  </text>
+
+</svg>

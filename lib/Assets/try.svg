@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="320" viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- ========================= -->
+  <!-- WHEAT (Left) -->
+  <!-- ========================= -->
+
+  <!-- Wheat Stem -->
+  <line x1="140" y1="70" x2="140" y2="250"
+        stroke="#C99700"
+        stroke-width="6"
+        stroke-linecap="round"/>
+
+  <!-- Wheat Grains -->
+  <ellipse cx="120" cy="100" rx="16" ry="9" fill="#F4C430" transform="rotate(-35 120 100)"/>
+  <ellipse cx="120" cy="130" rx="16" ry="9" fill="#F4C430" transform="rotate(-35 120 130)"/>
+  <ellipse cx="120" cy="160" rx="16" ry="9" fill="#F4C430" transform="rotate(-35 120 160)"/>
+  <ellipse cx="120" cy="190" rx="16" ry="9" fill="#F4C430" transform="rotate(-35 120 190)"/>
+
+  <ellipse cx="160" cy="115" rx="16" ry="9" fill="#F4C430" transform="rotate(35 160 115)"/>
+  <ellipse cx="160" cy="145" rx="16" ry="9" fill="#F4C430" transform="rotate(35 160 145)"/>
+  <ellipse cx="160" cy="175" rx="16" ry="9" fill="#F4C430" transform="rotate(35 160 175)"/>
+  <ellipse cx="160" cy="205" rx="16" ry="9" fill="#F4C430" transform="rotate(35 160 205)"/>
+
+  <!-- ========================= -->
+  <!-- CORN (Center) -->
+  <!-- ========================= -->
+
+  <!-- Corn Body -->
+  <ellipse cx="260" cy="160" rx="40" ry="80" fill="#F7D046"/>
+
+  <!-- Corn Kernel Lines -->
+  <line x1="260" y1="90" x2="260" y2="230" stroke="#E0B800" stroke-width="3"/>
+  <line x1="240" y1="110" x2="240" y2="210" stroke="#E0B800" stroke-width="2"/>
+  <line x1="280" y1="110" x2="280" y2="210" stroke="#E0B800" stroke-width="2"/>
+
+  <!-- Corn Husk -->
+  <path d="M220 190 Q260 250 300 190"
+        fill="none"
+        stroke="#2E8B57"
+        stroke-width="6"
+        stroke-linecap="round"/>
+
+  <path d="M225 120 Q200 170 220 210"
+        fill="#2E8B57"/>
+
+  <path d="M295 120 Q320 170 300 210"
+        fill="#2E8B57"/>
+
+  <!-- ========================= -->
+  <!-- BRAND NAME -->
+  <!-- ========================= -->
+
+  <text x="360" y="180"
+        font-family="Poppins, Arial, sans-serif"
+        font-size="85"
+        font-weight="600"
+        fill="#1E3A5F">
+    CropBio
+  </text>
+
+</svg>

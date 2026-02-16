@@ -96,7 +96,7 @@ class _DesktopNavMenu extends StatelessWidget {
           .map(
             (e) => Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: layout.isLargeDesktop ? 18 : 12,
+                horizontal: layout.isLargeDesktop ? 10 : 12,
               ),
               child: TextButton(
                 onPressed: () {},

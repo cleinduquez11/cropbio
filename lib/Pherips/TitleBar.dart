@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import '../Providers/LayoutProvider.dart';
 
@@ -28,7 +29,7 @@ class ResponsiveTitleBar extends StatelessWidget
             ? 70
             : layout.isDesktop
                 ? 75
-                : 85;
+                : 100;
 
     return Container(
       color: colors.primary, // dark blue background
@@ -36,23 +37,44 @@ class ResponsiveTitleBar extends StatelessWidget
       child: Center(
         child: Container(
           width: layout.contentWidth,
-          padding: EdgeInsets.symmetric(
-            horizontal: layout.horizontalPadding,
-          ),
+          // padding: EdgeInsets.symmetric(
+          //   horizontal: layout.horizontalPadding,
+          // ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              SizedBox(
+                      height: 200,
+                      width:350,
+                      child: SvgPicture.asset(
+                       "lib/Assets/Logo_2.svg" ,
+                        fit: BoxFit.fitWidth,
+                      ),
+                    ),
+
+                    //               SizedBox(
+                    //   height: 200,
+                    //   width: 350,
+                    //   child: Image.asset(
+                    //    "lib/Assets/Logo_2.png" ,
+                    //     fit: BoxFit.fitWidth,
+                    //   ),
+                    // ),
+
+                   
               
               /// LEFT — TITLE
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: layout.isMobile ? 18 : 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              // Text(
+              //   title,
+              //   style: TextStyle(
+              //     color: Colors.white,
+              //     fontSize: layout.isMobile ? 18 : 22,
+              //     fontWeight: FontWeight.w600,
+              //   ),
+              // ),
 
+    SizedBox(width: 320,),
               /// RIGHT — ACTION BUTTONS
               Row(
                 children: [
