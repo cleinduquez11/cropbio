@@ -6,7 +6,7 @@ ThemeData buildAppTheme(BuildContext context) {
 
   // Start with GoogleFonts Nunito Sans
   TextTheme textTheme = GoogleFonts.nunitoSansTextTheme(base.textTheme).apply(
-    bodyColor: Colors.black87,
+    bodyColor: Colors.white,
     displayColor: Colors.black87,
   );
 
@@ -28,10 +28,10 @@ ThemeData buildAppTheme(BuildContext context) {
   );
 
   return ThemeData(
-    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0B3C5D)),
+    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7A8F3D)),
     useMaterial3: true,
     
     textTheme: textTheme,
-    scaffoldBackgroundColor: Colors.white,
+    scaffoldBackgroundColor: Color(0xFF121212),
   );
 }

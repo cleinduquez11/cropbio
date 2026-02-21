@@ -32,7 +32,7 @@ class ResponsiveTitleBar extends StatelessWidget
                 : 100;
 
     return Container(
-      color: colors.primary, // dark blue background
+      // color: colors.primary, // dark blue background
       height: barHeight,
       child: Center(
         child: Container(
@@ -45,19 +45,19 @@ class ResponsiveTitleBar extends StatelessWidget
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                      height: 200,
-                      width:350,
+                      height: 220,
+                      width:260,
                       child: SvgPicture.asset(
-                       "lib/Assets/Logo_2.svg" ,
+                       "lib/Assets/Cropbio_Logo_par.svg" ,
                         fit: BoxFit.fitWidth,
                       ),
                     ),
 
                     //               SizedBox(
-                    //   height: 200,
-                    //   width: 350,
+                    //   height: 80,
+                    //   width: 80,
                     //   child: Image.asset(
-                    //    "lib/Assets/Logo_2.png" ,
+                    //    "lib/Assets/cropbio.png" ,
                     //     fit: BoxFit.fitWidth,
                     //   ),
                     // ),
@@ -74,7 +74,7 @@ class ResponsiveTitleBar extends StatelessWidget
               //   ),
               // ),
 
-    SizedBox(width: 320,),
+    SizedBox(width: 360,),
               /// RIGHT — ACTION BUTTONS
               Row(
                 children: [

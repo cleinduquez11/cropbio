@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../Providers/LayoutProvider.dart';
@@ -69,7 +70,88 @@ class _LandingVideoState extends State<LandingVideo> {
           child: SizedBox(
             width: _controller.value.size.width,
             height: _controller.value.size.height,
-            child: VideoPlayer(_controller),
+            child: Stack(children: [
+              VideoPlayer(_controller),
+                           
+               Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.50), // adjust this value
+              ),),
+                  Positioned.fill(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+
+              // Small Tagline
+              Text(
+                "MMSU • Batac • Ilocos Norte",
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  letterSpacing: 2,
+                  color: Colors.white70,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Main Heading
+              Text(
+                "Crop Biodiversity",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: layout.isMobile ? 32 : 64,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Subtitle
+              Text(
+                "Advancing research, preserving genetic resources,\nand empowering sustainable agriculture.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.montserrat(
+                  fontSize: layout.isMobile ? 14 : 18,
+                  height: 1.6,
+                  color: Colors.white70,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Call To Action Button
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE0B84C), // gold accent
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 18,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () {},
+                child: Text(
+                  "Explore Research",
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+
+              ]),
           ),
         ),
       ),

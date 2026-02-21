@@ -19,7 +19,7 @@ class ResponsiveNavBar extends StatelessWidget {
                 : 65;
 
     return Container(
-      color: colors.onSecondaryContainer, // slightly lighter than title bar
+      color: Color(0xFF1E1E1E), // slightly lighter than title bar
       height: navHeight,
       child: Center(
         child: Container(
