@@ -13,7 +13,9 @@ import 'package:cropbio/Pherips/TwoColumnGrid.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -165,6 +167,22 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
 
+// const SizedBox(height: 60),
+// ================= RESEARCH ANALYTICS =================
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        vertical: layout.verticalPadding * 2,
+                      ),
+                      // color: const Color(0xFFF4F6F1),
+                      child: Center(
+                        child: SizedBox(
+                          width: layout.contentWidth,
+                          child: const _ResearchAnalyticsSection(),
+                        ),
+                      ),
+                    ),
+
 // ================= CTA SECTION =================
                     // Container(
                     //   width: double.infinity,
@@ -266,9 +284,18 @@ class LandingPage extends StatelessWidget {
                             runSpacing: 30,
                             alignment: WrapAlignment.center,
                             children: const [
-                              _PartnerLogo(name: "MMSU"),
-                              _PartnerLogo(name: "DA"),
-                              _PartnerLogo(name: "CHED"),
+                              _PartnerLogo(
+                                name: "MMSU",
+                                assetPath: "lib/Assets/Agency_Logos/MMSU.png",
+                              ),
+                              _PartnerLogo(
+                                name: "DA",
+                                assetPath: "lib/Assets/Agency_Logos/DA.png",
+                              ),
+                              _PartnerLogo(
+                                name: "CHED",
+                                assetPath: "lib/Assets/Agency_Logos/CHED.png",
+                              ),
                             ],
                           ),
                         ],
@@ -411,25 +438,56 @@ class _FooterLinks extends StatelessWidget {
   }
 }
 
-class _PartnerLogo extends StatelessWidget {
+class _PartnerLogo extends StatefulWidget {
   final String name;
+  final String assetPath;
 
-  const _PartnerLogo({required this.name});
+  const _PartnerLogo({
+    required this.name,
+    required this.assetPath,
+  });
+
+  @override
+  State<_PartnerLogo> createState() => _PartnerLogoState();
+}
+
+class _PartnerLogoState extends State<_PartnerLogo> {
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Text(
-        name,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-          color: Colors.white,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        transform: _hover
+            ? (Matrix4.identity()..translate(0, -8))
+            : Matrix4.identity(),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.08),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              widget.assetPath,
+              height: 50,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 15),
+            Text(
+              widget.name,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -778,18 +836,339 @@ class _SignupFormState extends State<_SignupForm> {
         ),
         const SizedBox(height: 25),
         TextButton(
-          onPressed: () {
-            // You can link to contact page here
+            onPressed: () {
+              // You can link to contact page here
+            },
+            child: Text(
+              "Or Email Us Directly",
+              style: GoogleFonts.montserrat(
+                fontSize: 18,
+                height: 1.6,
+                color: Colors.white70,
+              ),
+            )),
+      ],
+    );
+  }
+}
+
+class _ResearchAnalyticsSection extends StatelessWidget {
+  const _ResearchAnalyticsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cropData = [
+      _ChartData("Rice", 40),
+      _ChartData("Corn", 25),
+      _ChartData("Vegetables", 20),
+      _ChartData("Root Crops", 15),
+    ];
+
+    final resilienceData = [
+      _ChartData("Drought", 30),
+      _ChartData("Flood", 20),
+      _ChartData("Pest", 35),
+      _ChartData("Salinity", 15),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Research Data Insights",
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 15),
+        const Text(
+          "An overview of biodiversity distribution and resilience traits "
+          "across ongoing institutional research programs.",
+          style: TextStyle(
+            fontSize: 18,
+            height: 1.6,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 60),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 900;
+
+            return Column(
+              children: [
+                isMobile
+                    ? Column(
+                        children: [
+                          _analyticsTextBlock(
+                            title: "Crop Distribution Analysis",
+                            description:
+                                "Rice and corn dominate accessions under conservation. "
+                                "Vegetables and root crops represent emerging focus areas "
+                                "for climate adaptive research programs.",
+                          ),
+                          const SizedBox(height: 30),
+                          _darkPieChart(cropData),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _analyticsTextBlock(
+                              title: "Crop Distribution Analysis",
+                              description:
+                                  "Rice and corn dominate accessions under conservation. "
+                                  "Vegetables and root crops represent emerging focus areas "
+                                  "for climate adaptive research programs.",
+                            ),
+                          ),
+                          const SizedBox(width: 60),
+                          Expanded(child: _darkPieChart(cropData)),
+                        ],
+                      ),
+                const SizedBox(height: 80),
+                isMobile
+                    ? Column(
+                        children: [
+                          _analyticsTextBlock(
+                            title: "Crop Distribution Analysis",
+                            description:
+                                "Rice and corn dominate accessions under conservation. "
+                                "Vegetables and root crops represent emerging focus areas "
+                                "for climate adaptive research programs.",
+                          ),
+                          const SizedBox(height: 30),
+                          _darkPieChart(cropData),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _analyticsTextBlock(
+                              title: "Crop Distribution Analysis",
+                              description:
+                                  "Rice and corn dominate accessions under conservation. "
+                                  "Vegetables and root crops represent emerging focus areas "
+                                  "for climate adaptive research programs.",
+                            ),
+                          ),
+                          const SizedBox(width: 60),
+                          Expanded(child: _darkPieChart(cropData)),
+                        ],
+                      ),
+                const SizedBox(height: 80),
+                isMobile
+                    ? Column(
+                        children: [
+                          _analyticsTextBlock(
+                            title: "Want to know more? ",
+                            description:
+                                "Due to subjective data gathering and manual field validation "
+                                "the cropbio team has its utmost dedication towards suistanability "
+                                "amids climate vulnerability.",
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          const SizedBox(width: 60),
+                          Expanded(
+                            child: _analyticsTextBlock(
+                              title: "Want to know more? ",
+                              description:
+                                  "Due to subjective data gathering and manual field validation "
+                                  "the cropbio team has its utmost dedication towards suistanability "
+                                  "amids climate vulnerability.",
+                            ),
+                          ),
+                        ],
+                      ),
+                const SizedBox(height: 80),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3F6B2A),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, "/dashboard");
+                    },
+                    icon: Icon(
+                      Icons.arrow_forward_ios_outlined,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      "Explore Full Dashboard",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            );
           },
-          child: const Text(
-            "Or Email Us Directly",
-            style: TextStyle(
-              color: Colors.white70,
-              decoration: TextDecoration.underline,
-            ),
+        ),
+      ],
+    );
+  }
+
+  Widget _analyticsTextBlock({
+    required String title,
+    required String description,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          description,
+          style: const TextStyle(
+            fontSize: 16,
+            height: 1.8,
+            color: Colors.white,
           ),
         ),
       ],
     );
   }
+
+  Widget _darkPieChart(List<_ChartData> data) {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: _darkChartDecoration(),
+      child: SfCircularChart(
+        backgroundColor: const Color(0xFF1E2E1E),
+        title: ChartTitle(
+          text: "Crop Distribution",
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        legend: const Legend(
+          isVisible: true,
+          textStyle: TextStyle(color: Colors.white70),
+        ),
+        tooltipBehavior: TooltipBehavior(
+          enable: true,
+          color: const Color(0xFF3F6B2A),
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        series: <CircularSeries>[
+          PieSeries<_ChartData, String>(
+            dataSource: data,
+            xValueMapper: (d, _) => d.category,
+            yValueMapper: (d, _) => d.value,
+            dataLabelSettings: const DataLabelSettings(
+              isVisible: true,
+              textStyle: TextStyle(color: Colors.white),
+            ),
+            pointColorMapper: (data, _) {
+              switch (data.category) {
+                case "Rice":
+                  return const Color(0xFF3F6B2A);
+                case "Corn":
+                  return const Color(0xFFC6A432);
+                case "Vegetables":
+                  return const Color(0xFF4E7D32);
+                default:
+                  return const Color(0xFF6B8E23);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= DARK BAR CHART =================
+
+  Widget _darkBarChart(List<_ChartData> data) {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: _darkChartDecoration(),
+      child: SfCartesianChart(
+        backgroundColor: const Color(0xFF1E2E1E),
+        title: ChartTitle(
+          text: "Climate Resilience Traits",
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        primaryXAxis: CategoryAxis(
+          labelStyle: const TextStyle(color: Colors.white70),
+          majorGridLines: const MajorGridLines(width: 0),
+        ),
+        primaryYAxis: NumericAxis(
+          labelStyle: const TextStyle(color: Colors.white70),
+          majorGridLines: MajorGridLines(
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
+        tooltipBehavior: TooltipBehavior(
+          enable: true,
+          color: const Color(0xFF3F6B2A),
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        series: <CartesianSeries>[
+          ColumnSeries<_ChartData, String>(
+            dataSource: data,
+            xValueMapper: (d, _) => d.category,
+            yValueMapper: (d, _) => d.value,
+            borderRadius: BorderRadius.circular(6),
+            color: const Color(0xFF3F6B2A),
+            dataLabelSettings: const DataLabelSettings(
+              isVisible: true,
+              textStyle: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _darkChartDecoration() {
+    return BoxDecoration(
+      color: const Color(0xFF1E2E1E),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          blurRadius: 20,
+          color: Colors.black.withOpacity(0.25),
+          offset: const Offset(0, 10),
+        ),
+      ],
+      border: Border.all(
+        color: const Color(0xFF3F6B2A).withOpacity(0.4),
+      ),
+    );
+  }
+}
+// Keep your improved dark chart builders here
+// (reuse the dark chart methods from previous message)
+
+class _ChartData {
+  final String category;
+  final double value;
+
+  _ChartData(this.category, this.value);
 }

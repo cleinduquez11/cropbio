@@ -1,3 +1,4 @@
+import 'package:cropbio/CropBioDashboard.dart';
 import 'package:cropbio/CropBioLandingPage.dart';
 import 'package:cropbio/Pherips/SubtleTheme.dart';
 import 'package:cropbio/Pherips/themes.dart';
@@ -27,6 +28,9 @@ class CropBiodiversityApp extends StatelessWidget {
       title: 'Crop Biodiversity',
       theme: buildAppTheme(context),
       home: const LandingPage(),
+      routes: {
+        "/dashboard": (context) => const Cropbiodashboard(),
+      },
     );
   }
 }

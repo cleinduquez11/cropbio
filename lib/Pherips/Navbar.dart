@@ -19,7 +19,7 @@ class ResponsiveNavBar extends StatelessWidget {
                 : 65;
 
     return Container(
-      color: Color(0xFF1E1E1E), // slightly lighter than title bar
+      // color: Color(0xFF1E1E1E), // slightly lighter than title bar
       height: navHeight,
       child: Center(
         child: Container(
@@ -82,7 +82,7 @@ class _DesktopNavMenu extends StatelessWidget {
 
     final items = [
       'Home',
-      'About',
+      'Dashboard',
       'Programs',
       'Biodiversity',
       'Data',
@@ -99,7 +99,19 @@ class _DesktopNavMenu extends StatelessWidget {
                 horizontal: layout.isLargeDesktop ? 10 : 12,
               ),
               child: TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  switch (e) {
+                    case 'Home':
+                    print(e);
+                    
+                    case 'Dashboard':
+                    Navigator.pushNamed(context, "/dashboard");
+                    print(e + " is Selected");
+                      
+                      break;
+                    default:
+                  }
+                },
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
                 ),
@@ -111,7 +123,7 @@ class _DesktopNavMenu extends StatelessWidget {
                         fontSize: layout.isLargeDesktop ? 16 : 14,
                       ),
                     ),
-                    Icon(Icons.arrow_drop_down_outlined,color: Colors.white, size: layout.isLargeDesktop ? 16 : 12),
+                    // Icon(Icons.arrow_drop_down_outlined,color: Colors.white, size: layout.isLargeDesktop ? 16 : 12),
                   ],
                 ),
               ),
