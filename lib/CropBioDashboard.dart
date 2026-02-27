@@ -1,9 +1,16 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:cropbio/API/UploadCsv.dart';
+import 'package:cropbio/API/fetchAll.dart';
 import 'package:cropbio/Models/Crop_data_srouce.dart';
 import 'package:cropbio/Models/crop_model.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
-
+import 'package:http/http.dart' as http;
 class Cropbiodashboard extends StatefulWidget {
   const Cropbiodashboard({super.key});
 
@@ -13,6 +20,51 @@ class Cropbiodashboard extends StatefulWidget {
 
 class _CropbiodashboardState extends State<Cropbiodashboard> {
   int _selectedIndex = 0;
+  
+  PlatformFile? _selectedFile;
+
+  Future<void> _pickCsvFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+      withData: true, // Important! get bytes for web
+    );
+
+    if (result != null && result.files.single.bytes != null) {
+      setState(() {
+        _selectedFile = result.files.single;
+      });
+
+   await uploadCsvWeb(result.files.single.bytes!, result.files.single.name, context);
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("No file selected")));
+    }
+  }
+
+
+  List<Map<String, dynamic>> _records = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadCropSamples(); // call function on init
+  }
+
+  /// Call the API service
+  Future<void> loadCropSamples() async {
+    setState(() => _loading = true);
+
+    final apiUrl = 'http://192.168.10.106:5000/fetch_all'; // your Flask API
+    final data = await fetchCropSamples(apiUrl: apiUrl);
+
+    setState(() {
+      _records = data;
+      _loading = false;
+    });
+  }
+
 
   final List<String> _menuItems = [
     "Overview",
@@ -44,9 +96,9 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
 
   Widget _buildSidebar() {
     return Container(
-      width: 160,
+      width: 300,
       color: const Color(0xFF1E2E1E),
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -55,8 +107,8 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 30),
               child: SizedBox(
-                height: 50,
-                width: 100,
+                height: 100,
+                width: 260,
                 child: SvgPicture.asset(
                   "lib/Assets/Cropbio_Logo_par.svg",
                   fit: BoxFit.fill,
@@ -92,7 +144,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 15),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF3F6B2A) : Colors.transparent,
         ),
@@ -127,7 +179,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
   // ================= OVERVIEW =================
 
   Widget _buildOverview() {
-    return const OverviewTable();
+   return OverviewTable(records: _records, loading: _loading);
   }
   // ================= CROP RECORDS =================
 
@@ -215,7 +267,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
             backgroundColor: const Color(0xFFC6A432),
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 18),
           ),
-          onPressed: () {},
+          onPressed: _pickCsvFile,
           icon: const Icon(Icons.upload_file, color: Colors.black),
           label: const Text(
             "Upload CSV / Excel",
@@ -250,7 +302,10 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
 }
 
 class OverviewTable extends StatefulWidget {
-  const OverviewTable({super.key});
+  final List<Map<String, dynamic>> records;
+  final bool loading;
+
+  const OverviewTable({super.key, required this.records, this.loading = true});
 
   @override
   State<OverviewTable> createState() => _OverviewTableState();
@@ -266,37 +321,32 @@ class _OverviewTableState extends State<OverviewTable> {
   @override
   void initState() {
     super.initState();
+    _loadData(); // initialize with passed records
+  }
 
-    _data = [
-      CropData(
-        field: "P1",
-        plot: "S1",
-        plantSample: 1,
-        code: "P1S1-1",
-        cropType: "Corn",
-        freshWeight: 33.116,
-        dryWeight: 10.634,
-        avgLeafArea: 599.58,
-        correctedLeafArea: 449.68,
-        spad: 51.6,
-        temperature: 32.4,
-        plantHeight: 2.07,
-      ),
-      CropData(
-        field: "P1",
-        plot: "S1",
-        plantSample: 2,
-        code: "P1S1-2",
-        cropType: "Corn",
-        freshWeight: 43.678,
-        dryWeight: 13.492,
-        avgLeafArea: 465.24,
-        correctedLeafArea: 348.93,
-        spad: 49.2,
-        temperature: 35,
-        plantHeight: 2.17,
-      ),
-    ];
+  @override
+  void didUpdateWidget(covariant OverviewTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.records != widget.records) {
+      _loadData();
+    }
+  }
+
+  void _loadData() {
+    // Convert _records to CropData
+    _data = widget.records.map((record) {
+      return CropData(
+        code: record['CODE'] ?? '',
+        cropType: record['CROP_TYPE'] ?? '',
+        freshWeight: (record['FRESH_WEIGHT'] ?? 0).toDouble(),
+        dryWeight: (record['DRY_WEIGHT'] ?? 0).toDouble(),
+        avgLeafArea: (record['Average_Leaf_Area'] ?? 0).toDouble(),
+        correctedLeafArea: (record['Corrected_Leaf_Area_(CF=0.75)'] ?? 0).toDouble(),
+        spad: (record['SPAD__values'] ?? 0).toDouble(),
+        temperature: (record['Temperature'] ?? 0).toDouble(),
+        plantHeight: (record['Plant_Height'] ?? 0).toDouble(),
+      );
+    }).toList();
 
     _dataSource = CropDataSource(_data);
   }
@@ -315,6 +365,10 @@ class _OverviewTableState extends State<OverviewTable> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Center(
       child: Container(
         width: 1500,
@@ -354,32 +408,25 @@ class _OverviewTableState extends State<OverviewTable> {
             const SizedBox(height: 30),
             Expanded(
               child: ScrollConfiguration(
-                 behavior: const ScrollBehavior().copyWith(scrollbars: false),
+                behavior: const ScrollBehavior().copyWith(scrollbars: false),
                 child: SfDataGrid(
                   source: _dataSource,
                   controller: _controller,
-                   editingGestureType: EditingGestureType.tap,
+                  editingGestureType: EditingGestureType.tap,
                   allowSorting: true,
                   allowFiltering: true,
                   allowMultiColumnSorting: true,
-                            showVerticalScrollbar: true,
-                                    allowEditing: true,
-        selectionMode: SelectionMode.single,
-        navigationMode: GridNavigationMode.cell,
-                          // showHorizontalScrollbar: true,
-                              //  showVerticalScrollbar: false,
-                          isScrollbarAlwaysShown: true,
-                  // columnWidthMode: ColumnWidthMode.auto,
-                          columnWidthMode: ColumnWidthMode.auto,
-                        columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
+                  showVerticalScrollbar: true,
+                  allowEditing: true,
+                  selectionMode: SelectionMode.single,
+                  navigationMode: GridNavigationMode.cell,
+                  isScrollbarAlwaysShown: true,
+                  columnWidthMode: ColumnWidthMode.auto,
+                  columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
                   columns: [
-                    GridColumn(columnName: 'Field', label: _header('Field')),
-                    GridColumn(columnName: 'Plot', label: _header('Plot')),
-                    GridColumn(columnName: 'Sample', label: _header('Sample')),
                     GridColumn(columnName: 'Code', label: _header('Code')),
                     GridColumn(columnName: 'Crop', label: _header('Crop')),
-                    GridColumn(
-                        columnName: 'FreshWeight', label: _header('Fresh W.')),
+                    GridColumn(columnName: 'FreshWeight', label: _header('Fresh W.')),
                     GridColumn(columnName: 'DryWeight', label: _header('Dry W.')),
                     GridColumn(columnName: 'SPAD', label: _header('SPAD')),
                     GridColumn(columnName: 'Temp', label: _header('Temp')),

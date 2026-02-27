@@ -41,6 +41,8 @@ dependencies:
   animations: ^2.0.11
   syncfusion_flutter_charts: ^29.1.38
   syncfusion_flutter_datagrid: ^29.1.38
+  file_picker: ^10.3.10
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

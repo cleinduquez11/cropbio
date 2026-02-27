@@ -1,3 +1,4 @@
+import math
 import os
 from flask import Flask, jsonify, request, send_from_directory, abort
 from pymongo import MongoClient
@@ -7,16 +8,12 @@ from flask_cors import CORS
 from bson import ObjectId
 from urllib.parse import quote_plus
 from config import MONGO_URI, DB_NAME, COLLECTIONS
-
-username = "coastermmsu7_db_user"
-password = "@Admin12345"   # ← may contain special chars
-encoded_password = quote_plus(password)
-
-URI = f"mongodb+srv://{username}:{encoded_password}@cropbio.ug6av4c.mongodb.net"
-
+import certifi
+import pandas as pd
+from datetime import datetime
 
 # Create a MongoDB client
-client = MongoClient(MONGO_URI)
+client = MongoClient(MONGO_URI,tlsCAFile=certifi.where())
 
 # Create a database
 db = client[DB_NAME]
@@ -28,36 +25,159 @@ else:
     print(f"Database '{DB_NAME}' created")
 
 
-collectionss = {}
+collections = {}
 # Check and create collections
-for collection in COLLECTIONS:
-    if collection not in db.list_collection_names():
-        db.create_collection(collection)
-        print(f"Collection '{collection}' created.")
+for cols in COLLECTIONS:
+    if cols not in db.list_collection_names():
+        db.create_collection(cols)
+        print(f"Collection '{cols}' created.")
     else:
-        print(f"Collection '{collection}' already exists.")
-    collectionss[collection] = db[collection]
+        print(f"Collection '{cols}' already exists.")
+    collections[cols] = db[cols]
 
 
 #     <------------- Initialize the API --------->
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+CORS(app)
+
+plant_samples_collection = collections["plant_samples"]
+crop_samples_collection = collections["crop_samples"]
+# collection = collections["crops"]
+# userCollection = collectionss['Users']
+# classroomCollection = collectionss['Classroom']
+# notesCollection = collectionss['Notes']
+
+
+# UPLOAD_FOLDER = './uploads'
+# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 
-collection = collectionss["Tasklist"]
-userCollection = collectionss['Users']
-classroomCollection = collectionss['Classroom']
-notesCollection = collectionss['Notes']
-
-
-UPLOAD_FOLDER = './uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Folder to save uploaded files
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 
+# Upload a CSV File that is parsed to be inputted in the database
+
+# Define which columns make a record unique
+unique_keys = ["CODE"]  # change to your actual unique columns
+
+@app.route("/upload", methods=["POST"])
+def upload_file():
+
+    if "file" not in request.files:
+        return jsonify({"success": False, "message": "No file part"}), 400
+
+    file = request.files["file"]
+
+    if file.filename == "":
+        return jsonify({"success": False, "message": "No selected file"}), 400
+
+    if not file.filename.endswith(".csv"):
+        return jsonify({"success": False, "message": "File must be CSV"}), 400
+
+    # Timestamped folder
+    now = datetime.now()
+    now_str = now.strftime("%Y_%m_%d_%H_%M_%S")
+    updated_folder = os.path.join(UPLOAD_FOLDER, now_str)
+    os.makedirs(updated_folder, exist_ok=True)
+
+    file_path = os.path.join(updated_folder, file.filename)
+    file.save(file_path)
+
+    try:
+        # Read CSV with fallback
+        try:
+            df = pd.read_csv(file_path, encoding='utf-8')
+        except UnicodeDecodeError:
+            df = pd.read_csv(file_path, encoding='latin1')
+
+        # Clean column names
+        df.columns = [col.strip().replace(' ', '_') for col in df.columns]
+
+        # Strip strings
+        df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
+
+        # Replace blanks / "*no data"
+        df.replace(to_replace=["", "*no data"], value=None, inplace=True)
+
+        if df.empty:
+            return jsonify({"success": False, "message": "CSV has no data"}), 400
+
+        # Build set of existing keys in MongoDB
+        existing_keys = set()
+        for doc in crop_samples_collection.find({}, {k: 1 for k in unique_keys}):
+            key_tuple = tuple(doc.get(k) for k in unique_keys)
+            existing_keys.add(key_tuple)
+
+        # Filter new records only
+        new_records = []
+        for _, row in df.iterrows():
+            key_tuple = tuple(row.get(k) for k in unique_keys)
+            if key_tuple not in existing_keys:
+                new_records.append(row.to_dict())
+                existing_keys.add(key_tuple)  # avoid duplicates within CSV itself
+
+        if not new_records:
+            return jsonify({"success": True, "filename": file.filename,
+                            "inserted_count": 0, "message": "All records are duplicates"}), 200
+
+        # Insert new records
+        result = crop_samples_collection.insert_many(new_records)
+
+        return jsonify({
+            "success": True,
+            "filename": file.filename,
+            "inserted_count": len(result.inserted_ids)
+        }), 200
+
+    except pd.errors.EmptyDataError:
+        return jsonify({"success": False, "message": "CSV is empty"}), 400
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
+
+
+
+def clean_for_json(doc):
+    """
+    Recursively convert NaN/Infinity in dict to None
+    """
+    if isinstance(doc, dict):
+        return {k: clean_for_json(v) for k, v in doc.items()}
+    elif isinstance(doc, list):
+        return [clean_for_json(item) for item in doc]
+    elif isinstance(doc, float) and (math.isnan(doc) or math.isinf(doc)):
+        return None
+    else:
+        return doc
+
+
+
+
+@app.route("/fetch_all", methods=["GET"])
+def fetch_all():
+    try:
+        # Get all documents and convert ObjectId to string
+        records = []
+        for doc in crop_samples_collection.find():
+            doc["_id"] = str(doc["_id"])
+            doc = clean_for_json(doc)  # <-- clean NaN / Inf
+            records.append(doc)
+
+        return jsonify({"success": True, "data": records}), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 

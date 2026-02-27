@@ -1,7 +1,4 @@
 class CropData {
-  final String field;
-  final String plot;
-  final int plantSample;
   final String code;
   final String cropType;
   final double freshWeight;
@@ -13,9 +10,7 @@ class CropData {
   final double plantHeight;
 
   CropData({
-    required this.field,
-    required this.plot,
-    required this.plantSample,
+
     required this.code,
     required this.cropType,
     required this.freshWeight,
