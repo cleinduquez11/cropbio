@@ -1,5 +1,6 @@
 import 'package:cropbio/Models/crop_model.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 class CropDataSource extends DataGridSource {
@@ -8,18 +9,26 @@ class CropDataSource extends DataGridSource {
   CropDataSource(this._data);
 
   @override
-  List<DataGridRow> get rows => _data.map((e) {
+ List<DataGridRow> get rows => _data
+      .asMap()
+      .entries
+      .map((entry) {
+        final int index = entry.key;
+        final CropData e = entry.value;
+
         return DataGridRow(cells: [
-          DataGridCell(columnName: 'Code', value: e.code),
-          DataGridCell(columnName: 'Crop', value: e.cropType),
-          DataGridCell(columnName: 'FreshWeight', value: e.freshWeight),
-          DataGridCell(columnName: 'DryWeight', value: e.dryWeight),
-          DataGridCell(columnName: 'SPAD', value: e.spad),
-          DataGridCell(columnName: 'Temp', value: e.temperature),
-          DataGridCell(columnName: 'Height', value: e.plantHeight),
-          DataGridCell(columnName: 'Actions', value: e),
+          DataGridCell<int>(columnName: '#', value: index + 1), // ✅ Line number
+          DataGridCell<String>(columnName: 'Code', value: e.code),
+          DataGridCell<String>(columnName: 'Crop', value: e.cropType),
+          DataGridCell<double>(columnName: 'FreshWeight', value: e.freshWeight),
+          DataGridCell<double>(columnName: 'DryWeight', value: e.dryWeight),
+          DataGridCell<double>(columnName: 'SPAD', value: e.spad),
+          DataGridCell<double>(columnName: 'Temp', value: e.temperature),
+          DataGridCell<double>(columnName: 'Height', value: e.plantHeight),
+          DataGridCell<CropData>(columnName: 'Actions', value: e),
         ]);
-      }).toList(growable: false);
+      })
+      .toList(growable: false);
 
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
@@ -54,10 +63,14 @@ class CropDataSource extends DataGridSource {
         return Container(
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            cell.value?.toString() ?? '',
-            overflow: TextOverflow.ellipsis,
-          ),
+child: Text(
+  cell.value?.toString() ?? '',
+  overflow: TextOverflow.ellipsis,
+  style: GoogleFonts.nunito(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+  ),
+)
         );
       }).toList(growable: false),
     );
