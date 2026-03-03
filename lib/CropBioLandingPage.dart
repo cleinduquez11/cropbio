@@ -637,7 +637,7 @@ class _StatCard extends StatefulWidget {
 }
 
 class _StatCardState extends State<_StatCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<int> _animation;
 
@@ -654,6 +654,12 @@ class _StatCardState extends State<_StatCard>
 
     _controller.forward();
   }
+
+  @override
+void dispose() {
+  _controller.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -697,7 +703,7 @@ class ScrollReveal extends StatefulWidget {
 }
 
 class _ScrollRevealState extends State<ScrollReveal>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacity;
   late Animation<double> _offset;
@@ -718,6 +724,12 @@ class _ScrollRevealState extends State<ScrollReveal>
       if (mounted) _controller.forward();
     });
   }
+
+  @override
+void dispose() {
+  _controller.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
