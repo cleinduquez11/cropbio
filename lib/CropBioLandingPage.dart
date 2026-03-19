@@ -1,3 +1,5 @@
+import 'package:cropbio/API/fetchAll.dart';
+import 'package:cropbio/Models/Crop_Summary.dart';
 import 'package:cropbio/Pherips/Appbar.dart';
 import 'package:cropbio/Pherips/Footer.dart';
 import 'package:cropbio/Pherips/Header.dart';
@@ -17,8 +19,31 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  CropSummary? summaryData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSummary();
+  }
+
+  Future<void> loadSummary() async {
+    final result = await fetchCropSummary();
+
+    setState(() {
+      summaryData = result;
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +71,7 @@ class LandingPage extends StatelessWidget {
                       height: 1,
                       color: Colors.grey.withOpacity(0.2),
                     ),
+
                     // ================= IMPACT STATS SECTION =================
                     ScrollReveal(
                       delay: const Duration(milliseconds: 400),
@@ -60,41 +86,51 @@ class LandingPage extends StatelessWidget {
                             width: layout.contentWidth,
                             child: layout.isMobile
                                 ? Column(
-                                    children: const [
+                                    children: [
                                       _StatCard(
-                                          number: 120,
-                                          suffix: "+",
-                                          label: "Crop Accessions"),
+                                        number:
+                                            summaryData?.totalAccessions ?? 0,
+                                        suffix: "+",
+                                        label: "Crop Varieties",
+                                      ),
                                       SizedBox(height: 20),
                                       _StatCard(
-                                          number: 35,
-                                          suffix: "+",
-                                          label: "Research Projects"),
+                                        number:
+                                            summaryData?.totalCropTypes ?? 0,
+                                        suffix: "",
+                                        label: "Crop Types",
+                                      ),
                                       SizedBox(height: 20),
                                       _StatCard(
-                                          number: 15,
-                                          suffix: "",
-                                          label: "Partner Institutions"),
+                                        number: summaryData?.totalFields ?? 0,
+                                        suffix: "",
+                                        label: "Experimental Fields",
+                                      ),
                                     ],
                                   )
                                 : Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
-                                    children: const [
+                                    children: [
                                       _StatCard(
-                                          number: 120,
-                                          suffix: "+",
-                                          label: "Crop Accessions"),
+                                        number:
+                                            summaryData?.totalAccessions ?? 0,
+                                        suffix: "+",
+                                        label: "Crop Varieties",
+                                      ),
                                       SizedBox(height: 20),
                                       _StatCard(
-                                          number: 35,
-                                          suffix: "+",
-                                          label: "Research Projects"),
+                                        number:
+                                            summaryData?.totalCropTypes ?? 0,
+                                        suffix: "",
+                                        label: "Crop Types",
+                                      ),
                                       SizedBox(height: 20),
                                       _StatCard(
-                                          number: 15,
-                                          suffix: "",
-                                          label: "Partner Institutions"),
+                                        number: summaryData?.totalFields ?? 0,
+                                        suffix: "",
+                                        label: "Experimental Fields",
+                                      ),
                                     ],
                                   ),
                           ),
@@ -107,7 +143,7 @@ class LandingPage extends StatelessWidget {
                       height: 1,
                       color: Colors.grey.withOpacity(0.2),
                     ),
-// ================= VISION SECTION =================
+                    // ================= VISION SECTION =================
                     ScrollReveal(
                       delay: const Duration(milliseconds: 600),
                       child: Container(
@@ -140,7 +176,7 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
 
-// ================= RESEARCH HIGHLIGHTS =================
+                    // ================= RESEARCH HIGHLIGHTS =================
                     Container(
                       width: double.infinity,
                       padding: EdgeInsets.symmetric(
@@ -167,8 +203,8 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
 
-// const SizedBox(height: 60),
-// ================= RESEARCH ANALYTICS =================
+                    // const SizedBox(height: 60),
+                    // ================= RESEARCH ANALYTICS =================
                     Container(
                       width: double.infinity,
                       padding: EdgeInsets.symmetric(
@@ -183,7 +219,7 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
 
-// ================= CTA SECTION =================
+                    // ================= CTA SECTION =================
                     // Container(
                     //   width: double.infinity,
                     //   padding: const EdgeInsets.symmetric(vertical: 80),
@@ -266,7 +302,7 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
 
-// ================= PARTNERS =================
+                    // ================= PARTNERS =================
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 60),
                       child: Column(
@@ -301,7 +337,7 @@ class LandingPage extends StatelessWidget {
                         ],
                       ),
                     ),
-// ================= FOOTER =================
+                    // ================= FOOTER =================
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 60),
@@ -636,8 +672,7 @@ class _StatCard extends StatefulWidget {
   State<_StatCard> createState() => _StatCardState();
 }
 
-class _StatCardState extends State<_StatCard>
-    with TickerProviderStateMixin {
+class _StatCardState extends State<_StatCard> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<int> _animation;
 
@@ -656,10 +691,10 @@ class _StatCardState extends State<_StatCard>
   }
 
   @override
-void dispose() {
-  _controller.dispose();
-  super.dispose();
-}
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -726,10 +761,10 @@ class _ScrollRevealState extends State<ScrollReveal>
   }
 
   @override
-void dispose() {
-  _controller.dispose();
-  super.dispose();
-}
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

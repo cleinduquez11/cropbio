@@ -160,6 +160,243 @@ def upload_file():
 
 
 
+
+
+
+
+@app.route("/getCropSummary", methods=["GET"])
+def get_crop_summary():
+
+    selected_season = request.args.get("season", "dry")
+
+    current_year = datetime.now().year
+    found_collection = None
+    selected_year = None
+
+    # Loop backwards until a collection is found
+    for year in range(current_year, current_year - 20, -1):  # limit to last 20 years
+        collection_name = f"{year}_{selected_season}_crops"
+        if collection_name in db.list_collection_names():
+            found_collection = collection_name
+            selected_year = str(year)
+            break
+
+    if not found_collection:
+        return jsonify({
+            "success": False,
+            "message": "No available crop data found for any recent year"
+        }), 404
+
+    seasonal_crops_collections = db[found_collection]
+
+    try:
+        # Total number of records
+        total_accessions = seasonal_crops_collections.count_documents({})
+
+        # Distinct crop types
+        crop_types = seasonal_crops_collections.distinct("CROP_TYPE")
+        total_crop_types = len(crop_types)
+
+        # Distinct plots
+        plots = seasonal_crops_collections.distinct("PLOT")
+        total_plots = len(plots)
+
+        # Distinct fields
+        fields = seasonal_crops_collections.distinct("FIELD")
+        total_fields = len(fields)
+
+        response_data = {
+            "success": True,
+            "filters": {
+                "year": selected_year,
+                "season": selected_season,
+                "collection_used": found_collection
+            },
+            "data": {
+                "total_accessions": total_accessions,
+                "total_crop_types": total_crop_types,
+                "total_plots": total_plots,
+                "total_fields": total_fields,
+                "crop_types_list": crop_types,
+                "plots_list": plots
+            }
+        }
+
+        # CLEAN NaN BEFORE RETURNING
+        response_data = clean_for_json(response_data)
+
+        return jsonify(response_data), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
+    
+    
+# @app.route("/uploadPlotData", methods=["POST"])
+# def upload_plot_file():
+#     if "file" not in request.files:
+#         return jsonify({"success": False, "message": "No file part"}), 400
+
+#     file = request.files["file"]
+
+#     if file.filename == "":
+#         return jsonify({"success": False, "message": "No selected file"}), 400
+
+#     if not file.filename.endswith(".csv"):
+#         return jsonify({"success": False, "message": "File must be CSV"}), 400
+
+#     selected_year = request.form.get("year")
+#     selected_season = request.form.get("season")
+#     seasonal_plot_collection = selected_year + "_" + selected_season + "_plots"
+
+#     if seasonal_plot_collection not in db.list_collection_names():
+#         db.create_collection(seasonal_plot_collection)
+#         print(f"Collection '{seasonal_plot_collection}' created.")
+#     # Timestamped folder
+#     seasonal_plot_collections = db[seasonal_plot_collection]
+#     now = datetime.now()
+#     now_str = now.strftime("%Y_%m_%d_%H_%M_%S")
+#     updated_folder = os.path.join(PLOT_UPLOAD_FOLDER, selected_year, selected_season,  now_str)
+#     os.makedirs(updated_folder, exist_ok=True)
+
+#     file_path = os.path.join(updated_folder, file.filename)
+#     file.save(file_path)
+#     try:
+#         # --- Read CSV with headers ---
+#         try:
+#             df = pd.read_csv(file_path, header=0, encoding='utf-8')
+#         except UnicodeDecodeError:
+#             df = pd.read_csv(file_path, header=0, encoding='latin1')
+
+#         if df.empty:
+#             return jsonify({"success": False, "message": "CSV has no data"}), 400
+
+#         # --- Normalize headers ---
+#         df.columns = [col.strip().replace(" ", "_").upper() for col in df.columns]
+
+#         # --- Define expected columns ---
+#         column_headers = [
+#             "FIELD", "PLOT", "PLANT_SAMPLE", "CODE", "LAT",
+#             "LON", "LENGTH", "WIDTH",
+#             "PLANT_SPACING", "ROW_SPACING", "SOIL_TYPE",
+#             "SOIL_MOISTURE", "SOIL_TEMPERATURE", "PLANT_HEIGHT"
+#         ]
+
+#         # --- Fill missing columns with None ---
+#         for col in column_headers:
+#             if col not in df.columns:
+#                 df[col] = None
+
+#         # --- Reorder columns ---
+#         df = df[column_headers]
+
+#         # --- Strip strings ---
+#         df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
+
+#         # --- Replace blanks / "*no data" with None ---
+#         df.replace(to_replace=["", "*no data"], value=None, inplace=True)
+
+#         # --- Safe type enforcement ---
+#         dtype_map = {
+#             "FIELD": str,
+#             "PLOT": str,
+#             "PLANT_SAMPLE": str,
+#             "CODE": str,
+#             "LAT": float,
+#             "LON": float,
+#             "LENGTH": float,
+#             "WIDTH": float,
+#             "PLANT_SPACING": float,
+#             "ROW_SPACING": float,
+#             "SOIL_TYPE": str,
+#             "SOIL_MOISTURE": float,
+#             "SOIL_TEMPERATURE": float,
+#             "PLANT_HEIGHT": float
+#         }
+
+#         def safe_convert(x, col_type):
+#             if x is None:
+#                 return None
+#             try:
+#                 return col_type(x)
+#             except (ValueError, TypeError):
+#                 return None
+
+
+
+#         # --- Parse Lat/Lon if in degrees/minutes format ---
+#         def parse_coord(coord):
+#             if coord is None:
+#                 return None
+#             try:
+#                 coord = str(coord).replace("Â°", ":").replace("°", ":")
+#                 parts = coord.split(":")
+#                 deg = float(parts[0])
+#                 minutes = float(parts[1])
+#                 return deg + minutes / 60
+#             except:
+#                 return None
+
+#         if 'LAT' in df.columns:
+#             df['LAT'] = df['LAT'].apply(parse_coord)
+#         if 'LON' in df.columns:
+#             df['LON'] = df['LON'].apply(parse_coord)
+
+
+
+#         for col, col_type in dtype_map.items():
+#             if col in df.columns:
+#                 df[col] = df[col].apply(lambda x: safe_convert(x, col_type))
+
+
+#         # --- Avoid duplicates in MongoDB ---
+#         unique_keys = ["FIELD", "PLOT", "PLANT_SAMPLE", "CODE"]
+#         existing_keys = set()
+#         for doc in seasonal_plot_collections.find({}, {k: 1 for k in unique_keys}):
+#             key_tuple = tuple(doc.get(k) for k in unique_keys)
+#             existing_keys.add(key_tuple)
+
+#         new_records = []
+#         for _, row in df.iterrows():
+#             key_tuple = tuple(row.get(k) for k in unique_keys)
+#             if key_tuple not in existing_keys:
+#                 new_records.append(row.to_dict())
+#                 existing_keys.add(key_tuple)
+
+#         if not new_records:
+#             os.remove(file_path)
+#             return jsonify({
+#                 "success": True,
+#                 "filename": file.filename,
+#                 "inserted_count": 0,
+#                 "message": "All records are duplicates"
+#             }), 200
+        
+
+
+
+
+#         # --- Insert new records ---
+#         result = seasonal_plot_collections.insert_many(new_records)
+
+#         return jsonify({
+#             "success": True,
+#             "filename": file.filename,
+#             "inserted_count": len(result.inserted_ids)
+#         }), 200
+
+#     except pd.errors.EmptyDataError:
+#         return jsonify({"success": False, "message": "CSV is empty"}), 400
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+
+
+
 @app.route("/uploadPlotData", methods=["POST"])
 def upload_plot_file():
     if "file" not in request.files:
@@ -175,56 +412,54 @@ def upload_plot_file():
 
     selected_year = request.form.get("year")
     selected_season = request.form.get("season")
-    seasonal_plot_collection = selected_year + "_" + selected_season + "_plots"
+    seasonal_plot_collection = selected_year + "_" + selected_season + "_crops"
 
     if seasonal_plot_collection not in db.list_collection_names():
         db.create_collection(seasonal_plot_collection)
         print(f"Collection '{seasonal_plot_collection}' created.")
-    # Timestamped folder
+
     seasonal_plot_collections = db[seasonal_plot_collection]
+
     now = datetime.now()
     now_str = now.strftime("%Y_%m_%d_%H_%M_%S")
-    updated_folder = os.path.join(PLOT_UPLOAD_FOLDER, selected_year, selected_season,  now_str)
+
+    updated_folder = os.path.join(
+        PLOT_UPLOAD_FOLDER, selected_year, selected_season, now_str
+    )
     os.makedirs(updated_folder, exist_ok=True)
 
     file_path = os.path.join(updated_folder, file.filename)
     file.save(file_path)
+
     try:
-        # --- Read CSV with headers ---
         try:
-            df = pd.read_csv(file_path, header=0, encoding='utf-8')
+            df = pd.read_csv(file_path, header=0, encoding="utf-8")
         except UnicodeDecodeError:
-            df = pd.read_csv(file_path, header=0, encoding='latin1')
+            df = pd.read_csv(file_path, header=0, encoding="latin1")
 
         if df.empty:
             return jsonify({"success": False, "message": "CSV has no data"}), 400
 
-        # --- Normalize headers ---
+        # Normalize headers
         df.columns = [col.strip().replace(" ", "_").upper() for col in df.columns]
 
-        # --- Define expected columns ---
         column_headers = [
-            "FIELD", "PLOT", "PLANT_SAMPLE", "CODE", "LAT",
-            "LON", "LENGTH", "WIDTH",
-            "PLANT_SPACING", "ROW_SPACING", "SOIL_TYPE",
-            "SOIL_MOISTURE", "SOIL_TEMPERATURE", "PLANT_HEIGHT"
+            "FIELD","PLOT","PLANT_SAMPLE","CODE","LAT",
+            "LON","LENGTH","WIDTH",
+            "PLANT_SPACING","ROW_SPACING","SOIL_TYPE",
+            "SOIL_MOISTURE","SOIL_TEMPERATURE","PLANT_HEIGHT"
         ]
 
-        # --- Fill missing columns with None ---
         for col in column_headers:
             if col not in df.columns:
                 df[col] = None
 
-        # --- Reorder columns ---
         df = df[column_headers]
 
-        # --- Strip strings ---
         df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
 
-        # --- Replace blanks / "*no data" with None ---
         df.replace(to_replace=["", "*no data"], value=None, inplace=True)
 
-        # --- Safe type enforcement ---
         dtype_map = {
             "FIELD": str,
             "PLOT": str,
@@ -250,9 +485,6 @@ def upload_plot_file():
             except (ValueError, TypeError):
                 return None
 
-
-
-        # --- Parse Lat/Lon if in degrees/minutes format ---
         def parse_coord(coord):
             if coord is None:
                 return None
@@ -265,60 +497,79 @@ def upload_plot_file():
             except:
                 return None
 
-        if 'LAT' in df.columns:
-            df['LAT'] = df['LAT'].apply(parse_coord)
-        if 'LON' in df.columns:
-            df['LON'] = df['LON'].apply(parse_coord)
+        if "LAT" in df.columns:
+            df["LAT"] = df["LAT"].apply(parse_coord)
 
-
+        if "LON" in df.columns:
+            df["LON"] = df["LON"].apply(parse_coord)
 
         for col, col_type in dtype_map.items():
             if col in df.columns:
                 df[col] = df[col].apply(lambda x: safe_convert(x, col_type))
 
+        # -----------------------------
+        # UPDATE plot_info USING CODE
+        # -----------------------------
 
-        # --- Avoid duplicates in MongoDB ---
-        unique_keys = ["FIELD", "PLOT", "PLANT_SAMPLE", "CODE"]
-        existing_keys = set()
-        for doc in seasonal_plot_collections.find({}, {k: 1 for k in unique_keys}):
-            key_tuple = tuple(doc.get(k) for k in unique_keys)
-            existing_keys.add(key_tuple)
+        updated_count = 0
+        not_found = 0
 
-        new_records = []
         for _, row in df.iterrows():
-            key_tuple = tuple(row.get(k) for k in unique_keys)
-            if key_tuple not in existing_keys:
-                new_records.append(row.to_dict())
-                existing_keys.add(key_tuple)
 
-        if not new_records:
-            os.remove(file_path)
-            return jsonify({
-                "success": True,
-                "filename": file.filename,
-                "inserted_count": 0,
-                "message": "All records are duplicates"
-            }), 200
-        
+            code = row.get("CODE")
 
+            if not code:
+                continue
 
+            plot_info = {
+                "LAT": row.get("LAT"),
+                "LON": row.get("LON"),
+                "LENGTH": row.get("LENGTH"),
+                "WIDTH": row.get("WIDTH"),
+                "PLANT_SPACING": row.get("PLANT_SPACING"),
+                "ROW_SPACING": row.get("ROW_SPACING"),
+                "SOIL_TYPE": row.get("SOIL_TYPE"),
+                "SOIL_MOISTURE": row.get("SOIL_MOISTURE"),
+                "SOIL_TEMPERATURE": row.get("SOIL_TEMPERATURE"),
+                "PLANT_HEIGHT": row.get("PLANT_HEIGHT")
+            }
 
+            result = seasonal_plot_collections.update_one(
+                {"CODE": code},
+                {"$set": {"plot_info": plot_info}}
+            )
 
-        # --- Insert new records ---
-        result = seasonal_plot_collections.insert_many(new_records)
+            if result.matched_count > 0:
+                updated_count += 1
+            else:
+                not_found += 1
 
         return jsonify({
             "success": True,
             "filename": file.filename,
-            "inserted_count": len(result.inserted_ids)
+            "inserted_count": updated_count,
+            "codes_not_found": not_found
         }), 200
 
     except pd.errors.EmptyDataError:
         return jsonify({"success": False, "message": "CSV is empty"}), 400
+
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+#             return jsonify({
+#                 "success": True,
+#                 "filename": file.filename,
+#                 "inserted_count": 0,
+#                 "message": "All records are duplicates"
+#             }), 200
+        
+
+
 
 def clean_for_json(doc):
     """
@@ -340,8 +591,9 @@ def clean_for_json(doc):
 def fetch_all():
     try:
         # Get all documents and convert ObjectId to string
+        summary_crop_samples_collections = db['2025_Dry_crops']
         records = []
-        for doc in crop_samples_collection.find():
+        for doc in summary_crop_samples_collections.find():
             doc["_id"] = str(doc["_id"])
             doc = clean_for_json(doc)  # <-- clean NaN / Inf
             records.append(doc)

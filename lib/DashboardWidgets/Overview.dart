@@ -1,5 +1,6 @@
 import 'package:cropbio/Models/Crop_data_source.dart';
 import 'package:cropbio/Models/crop_model.dart';
+import 'package:cropbio/Models/plot_model.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
@@ -47,8 +48,28 @@ class _OverviewTableState extends State<OverviewTable> {
         correctedLeafArea:
             (record['Corrected_Leaf_Area_(CF=0.75)'] ?? 0).toDouble(),
         spad: (record['SPAD__values'] ?? 0).toDouble(),
-        temperature: (record['Temperature'] ?? 0).toDouble(),
-        plantHeight: (record['Plant_Height'] ?? 0).toDouble(),
+        plotData: PlotData.fromMongo(record),
+        capCover: record['Cap_Cover'] ?? "",
+        chlA: (record['Chl_A'] ?? 0).toDouble(),
+        chlB: (record['Chl_B'] ?? 0).toDouble(),
+        caretenoid: (record['Caretenoid'] ?? 0).toDouble(),
+        ldmc: (record['LDMC'] ?? 0).toDouble(),
+        leafWaterConcentration:
+            (record['Leaf_Water_Concentration'] ?? 0).toDouble(),
+        equivalentWaterThickness:
+            (record['Equivalent_Water_Thickness_(EWT)'] ?? 0).toDouble(),
+        specificLeafArea:
+            (record['Specific_Leaf_Area_(cm2/g)'] ?? 0).toDouble(),
+        lai: (record['LAI'] ?? 0).toDouble(),
+        difn: (record['DIFN'] ?? 0).toDouble(),
+        mta: (record['MTA'] ?? 0).toDouble(),
+        sem: (record['SEM'] ?? 0).toDouble(),
+        smp: (record['SMP'] ?? 0).toDouble(),
+        sel: (record['SEL'] ?? 0).toDouble(),
+        chloropyllVal: (record['Chloropyll_Val'] ?? 0).toDouble(),
+        field: record['FIELD'] ?? '',
+        plot: record['PLOT'] ?? '',
+        plantSample: record['PLANT_SAMPLE'] ?? 0,
       );
     }).toList();
 
@@ -75,7 +96,7 @@ class _OverviewTableState extends State<OverviewTable> {
 
     return Center(
       child: Container(
-        width: 1500,
+        width: 2200,
         padding: const EdgeInsets.all(30),
         child: Column(
           children: [
@@ -116,6 +137,18 @@ class _OverviewTableState extends State<OverviewTable> {
               ],
             ),
             const SizedBox(height: 30),
+            Row(
+              children: [
+                _actionButton("Add", Icons.add),
+                const SizedBox(width: 15),
+                _actionButton("Edit", Icons.edit),
+                const SizedBox(width: 15),
+                _actionButton("Delete", Icons.delete),
+                const SizedBox(width: 15),
+                _actionButton("Download", Icons.download),
+              ],
+            ),
+            const SizedBox(height: 30),
             Expanded(
               child: ScrollConfiguration(
                 behavior: const ScrollBehavior().copyWith(scrollbars: false),
@@ -134,12 +167,13 @@ class _OverviewTableState extends State<OverviewTable> {
                     allowFiltering: true,
                     allowMultiColumnSorting: true,
                     showVerticalScrollbar: true,
-                     showHorizontalScrollbar: true, // ✅ horizontal scrollbar enable
+                    showHorizontalScrollbar:
+                        true, // ✅ horizontal scrollbar enable
                     allowEditing: true,
                     selectionMode: SelectionMode.single,
                     navigationMode: GridNavigationMode.cell,
                     isScrollbarAlwaysShown: true,
-                    columnWidthMode: ColumnWidthMode.auto,
+                    columnWidthMode: ColumnWidthMode.fill,
                     columnWidthCalculationRange:
                         ColumnWidthCalculationRange.allRows,
                     gridLinesVisibility: GridLinesVisibility.both,
@@ -157,11 +191,11 @@ class _OverviewTableState extends State<OverviewTable> {
                       GridColumn(columnName: 'Temp', label: _header('Temp')),
                       GridColumn(
                           columnName: 'Height', label: _header('Height')),
-                      GridColumn(
-                          allowSorting: false,
-                          allowFiltering: false,
-                          columnName: 'Actions',
-                          label: _header('Actions')),
+                      // GridColumn(
+                      //     allowSorting: false,
+                      //     allowFiltering: false,
+                      //     columnName: 'Actions',
+                      //     label: _header('Actions')),
                     ],
                   ),
                 ),
@@ -186,6 +220,21 @@ class _OverviewTableState extends State<OverviewTable> {
           fontSize: 14,
         ),
       ),
+    );
+  }
+
+  Widget _actionButton(String label, IconData icon) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF3F6B2A),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+      ),
+      onPressed: () {},
+      icon: Icon(icon, size: 18, color: Colors.white),
+      label: Text(label, style: const TextStyle(color: Colors.white)),
     );
   }
 }

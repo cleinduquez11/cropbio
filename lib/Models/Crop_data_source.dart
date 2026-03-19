@@ -23,56 +23,28 @@ class CropDataSource extends DataGridSource {
           DataGridCell<double>(columnName: 'FreshWeight', value: e.freshWeight),
           DataGridCell<double>(columnName: 'DryWeight', value: e.dryWeight),
           DataGridCell<double>(columnName: 'SPAD', value: e.spad),
-          DataGridCell<double>(columnName: 'Temp', value: e.temperature),
-          DataGridCell<double>(columnName: 'Height', value: e.plantHeight),
-          DataGridCell<CropData>(columnName: 'Actions', value: e),
+          DataGridCell<double>(columnName: 'Temp', value: e.plotData.soilTemperature),
+          DataGridCell<double>(columnName: 'Height', value: e.plotData.plantHeight),
+          // DataGridCell<CropData>(columnName: 'Actions', value: e),
         ]);
       })
-      .toList(growable: false);
+      .toList();
 
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
     return DataGridRowAdapter(
-      color: Colors.white,
+      color: Colors.black,
       cells: row.getCells().map((cell) {
-        if (cell.columnName == 'Actions') {
-          final CropData data = cell.value;
-
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min, // important optimization
-              children: [
-                IconButton(
-                  splashRadius: 18,
-                  icon: const Icon(Icons.show_chart,
-                      size: 18, color: Color(0xFF3F6B2A)),
-                  onPressed: () => debugPrint("View Graph ${data.code}"),
-                ),
-                IconButton(
-                  splashRadius: 18,
-                  icon: const Icon(Icons.analytics,
-                      size: 18, color: Color(0xFFC6A432)),
-                  onPressed: () => debugPrint("Analyze ${data.code}"),
-                ),
-              ],
-            ),
-          );
-        }
-
         return Container(
           alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-child: Text(
-  cell.value?.toString() ?? '',
-  overflow: TextOverflow.ellipsis,
-  style: GoogleFonts.nunito(
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-  ),
-)
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            cell.value.toString(),
+            style: const TextStyle(color: Colors.white),
+          ),
         );
-      }).toList(growable: false),
+      }).toList(),
     );
   }
+
 }
