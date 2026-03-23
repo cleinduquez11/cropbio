@@ -1,17 +1,9 @@
 import 'package:cropbio/API/fetchAll.dart';
 import 'package:cropbio/Models/Crop_Summary.dart';
-import 'package:cropbio/Pherips/Appbar.dart';
-import 'package:cropbio/Pherips/Footer.dart';
-import 'package:cropbio/Pherips/Header.dart';
-import 'package:cropbio/Pherips/Headline.dart';
-import 'package:cropbio/Pherips/LandingCarousel.dart';
 import 'package:cropbio/Pherips/LandingCarouselVid.dart';
-import 'package:cropbio/Pherips/LatestNews.dart';
 import 'package:cropbio/Pherips/LayoutWrapper.dart';
 import 'package:cropbio/Pherips/Navbar.dart';
-import 'package:cropbio/Pherips/ThreeColumnGrid.dart';
 import 'package:cropbio/Pherips/TitleBar.dart';
-import 'package:cropbio/Pherips/TwoColumnGrid.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';

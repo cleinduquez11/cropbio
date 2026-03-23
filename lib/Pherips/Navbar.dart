@@ -102,12 +102,18 @@ class _DesktopNavMenu extends StatelessWidget {
                 onPressed: () {
                   switch (e) {
                     case 'Home':
-                    print(e);
-                    
+                      print(e);
+
                     case 'Dashboard':
-                    Navigator.pushNamed(context, "/dashboard");
-                    print(e + " is Selected");
-                      
+                      Navigator.pushNamed(context, "/dashboard");
+                      print(e + " is Selected");
+
+                      break;
+
+                    case 'Programs':
+                      Navigator.pushNamed(context, "/map");
+                      print(e + " is Selected");
+
                       break;
                     default:
                   }

@@ -1,20 +1,12 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:cropbio/API/UploadCsv.dart';
 import 'package:cropbio/API/FetchAll.dart';
 import 'package:cropbio/DashboardWidgets/Overview.dart';
 import 'package:cropbio/DashboardWidgets/PlotRecords.dart';
 import 'package:cropbio/DashboardWidgets/UploadSection.dart';
-import 'package:cropbio/Models/Crop_data_source.dart';
-import 'package:cropbio/Models/crop_model.dart';
 import 'package:cropbio/Widgets/CustomSnackbar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:http/http.dart';
-import 'package:syncfusion_flutter_datagrid/datagrid.dart';
-import 'package:http/http.dart' as http;
 
 class Cropbiodashboard extends StatefulWidget {
   const Cropbiodashboard({super.key});
@@ -41,7 +33,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
       });
 
       await uploadCropData(
-          result.files.single.bytes!, result.files.single.name,"","");
+          result.files.single.bytes!, result.files.single.name, "", "");
     } else {
       CustomSnackBar.show(
         context,
@@ -53,8 +45,6 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
       );
     }
   }
-
-
 
   Future<void> _pickAndUploadPlotData() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -81,9 +71,6 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
       );
     }
   }
-
-
-
 
   List<Map<String, dynamic>> _records = [];
   bool _loading = true;
