@@ -12,7 +12,7 @@ class CropBioMap extends StatefulWidget {
 class _CropBioMapState extends State<CropBioMap> {
   // 📍 MMSU Batac Coordinates
   static const LatLng mmsuBatac = LatLng(18.0553, 120.5453);
-  static const LatLng site1 = LatLng(18.05027556, 120.55015583);
+  static const LatLng site1 = LatLng(18.0553, 120.5453);
 
 // (18.05555556, 120.55405556)
   final MapController mapController = MapController();
@@ -46,7 +46,7 @@ class _CropBioMapState extends State<CropBioMap> {
         children: [
           // 🌍 Esri World Imagery (Optimized)
           TileLayer(
-            urlTemplate: "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+            urlTemplate: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
 
             userAgentPackageName: 'com.example.cropbio',
 
