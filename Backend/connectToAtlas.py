@@ -1,11 +1,11 @@
 from pymongo import MongoClient
 from urllib.parse import quote_plus
-from config import MONGO_URI, DB_NAME, COLLECTIONS
+from config import MONGO_URI_LOCAL, DB_NAME, COLLECTIONS
 from datetime import datetime
 import random
 
 try:
-    client = MongoClient(MONGO_URI)
+    client = MongoClient(MONGO_URI_LOCAL)
     client.admin.command("ping")  # Force connection check
     print("Connected to MongoDB")
 except Exception as e:

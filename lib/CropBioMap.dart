@@ -21,6 +21,7 @@ class _CropBioMapState extends State<CropBioMap> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           "Crop Bio Map",
           style: TextStyle(color: Colors.white),

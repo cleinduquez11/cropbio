@@ -8,8 +8,8 @@ call "C:\Anaconda\Scripts\activate.bat"
 REM Activate your environment (replace env_name with your actual env)
 call conda activate coaster_py_env
 
-echo CropBiodiversity Backend System API is running in debug mode....
+echo CropBiodiversity Backend System API is running in production mode....
 
-python "%~dp0runDebug.py"
+python "%~dp0runProd.py"
 
 pause
