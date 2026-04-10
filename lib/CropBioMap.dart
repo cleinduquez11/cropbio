@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 
 class CropBioMap extends StatefulWidget {
@@ -20,16 +21,23 @@ class _CropBioMapState extends State<CropBioMap> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
           "Crop Bio Map",
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(
+    color: Colors.white, // Change to any color you want
+  ),
+
       ),
       body: FlutterMap(
+        
         mapController: mapController,
         options: MapOptions(
+          
           initialCenter: mmsuBatac,
           // crs: Epsg4326(),
           initialZoom: 17,
@@ -37,6 +45,7 @@ class _CropBioMapState extends State<CropBioMap> {
           // ⭐ Web performance optimization
           minZoom: 5,
           maxZoom: 24,
+          backgroundColor: Colors.black,
 
           // Disable rotation (saves performance)
           interactionOptions: const InteractionOptions(
@@ -59,6 +68,7 @@ class _CropBioMapState extends State<CropBioMap> {
 
             // Improves web tile loading
             retinaMode: false,
+             tileProvider: CancellableNetworkTileProvider(),
           ),
 
           // 📍 Marker Layer
