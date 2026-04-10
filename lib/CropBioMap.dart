@@ -23,6 +23,7 @@ class _CropBioMapState extends State<CropBioMap> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           "Crop Bio Map",
           style: TextStyle(color: Colors.white),
