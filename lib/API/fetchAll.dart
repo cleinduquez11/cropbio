@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cropbio/Configs/config.dart';
 import 'package:cropbio/Models/Crop_Summary.dart';
 import 'package:http/http.dart' as http;
 
@@ -58,12 +59,12 @@ Future<List<Map<String, dynamic>>> fetchAll(
   }
 }
 
-const String baseUrl = "http://localhost:5000";
+// const String baseUrl = "http://localhost:5000";
 // http://192.168.1.5:5000/getCropSummary?season=dry
 Future<CropSummary?> fetchCropSummary() async {
   try {
     final response = await http.get(
-      Uri.parse("$baseUrl/getCropSummary?season=Dry"),
+      Uri.parse("${Config.baseUrl}/getCropSummary?season=Dry"),
     );
 
     if (response.statusCode == 200) {

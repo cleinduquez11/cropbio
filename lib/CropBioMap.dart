@@ -29,9 +29,6 @@ class _CropBioMapState extends State<CropBioMap> {
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(
-    color: Colors.white, // Change to any color you want
-  ),
 
       ),
       body: FlutterMap(

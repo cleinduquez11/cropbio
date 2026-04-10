@@ -15,8 +15,8 @@ class ResponsiveNavBar extends StatelessWidget {
         : layout.isTablet
             ? 55
             : layout.isDesktop
-                ? 60
-                : 65;
+                ? 55
+                : 55;
 
     return Container(
       // color: Color(0xFF1E1E1E), // slightly lighter than title bar
@@ -45,12 +45,12 @@ class _MobileNavMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       'Home',
-      'About',
+      'Project',
       'Programs',
-      'Biodiversity',
+      'Services',
       'Data',
       'News',
-      'Contact'
+      'About us'
     ];
 
     return Align(
@@ -72,7 +72,6 @@ class _MobileNavMenu extends StatelessWidget {
 }
 
 /* ================= DESKTOP NAV ================= */
-
 class _DesktopNavMenu extends StatelessWidget {
   const _DesktopNavMenu();
 
@@ -82,60 +81,67 @@ class _DesktopNavMenu extends StatelessWidget {
 
     final items = [
       'Home',
-      'Dashboard',
+      'Project',
       'Programs',
-      'Biodiversity',
+      'Services',
       'Data',
       'News',
-      'Contact'
+      'About us'
     ];
+    return SizedBox(
+      width: double.infinity,
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: items
-          .map(
-            (e) => Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: layout.isLargeDesktop ? 10 : 12,
-              ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.center,
+
+        children: items.map((e) {
+
+          return Expanded(
+            child: Center(
               child: TextButton(
                 onPressed: () {
                   switch (e) {
+
                     case 'Home':
                       print(e);
+                      break;
 
                     case 'Dashboard':
                       Navigator.pushNamed(context, "/dashboard");
-                      print(e + " is Selected");
-
+                      print("$e is Selected");
                       break;
 
                     case 'Programs':
                       Navigator.pushNamed(context, "/map");
-                      print(e + " is Selected");
-
+                      print("$e is Selected");
                       break;
+
                     default:
                   }
                 },
+
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    vertical: layout.verticalPadding / 2,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Text(
-                      e,
-                      style: TextStyle(
-                        fontSize: layout.isLargeDesktop ? 16 : 14,
-                      ),
-                    ),
-                    // Icon(Icons.arrow_drop_down_outlined,color: Colors.white, size: layout.isLargeDesktop ? 16 : 12),
-                  ],
+
+                child: Text(
+                  e,
+
+                  style: TextStyle(
+                    fontSize: layout.bodyFontSize,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
-          )
-          .toList(),
+          );
+
+        }).toList(),
+      ),
     );
   }
 }

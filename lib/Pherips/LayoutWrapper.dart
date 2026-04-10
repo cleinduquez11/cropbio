@@ -22,3 +22,34 @@ class LayoutWrapper extends StatelessWidget {
     );
   }
 }
+
+
+
+class ResponsiveContentWrapper extends StatelessWidget {
+  final Widget child;
+
+  const ResponsiveContentWrapper({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = context.watch<LayoutProvider>();
+
+    return Container(
+      width: double.infinity,
+
+      margin: EdgeInsets.symmetric(
+        horizontal: layout.isMobile
+            ? 16   // mobile side margin
+            : layout.outerMargin,
+      ),
+
+      child: SizedBox(
+        width: layout.contentWidth,
+        child: child,
+      ),
+    );
+  }
+}

@@ -1,5 +1,6 @@
 import 'package:cropbio/API/UploadCsv.dart';
 import 'package:cropbio/API/FetchAll.dart';
+import 'package:cropbio/Configs/config.dart';
 import 'package:cropbio/DashboardWidgets/Overview.dart';
 import 'package:cropbio/DashboardWidgets/PlotRecords.dart';
 import 'package:cropbio/DashboardWidgets/UploadSection.dart';
@@ -85,9 +86,9 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
   Future<void> loadCropSamples() async {
     setState(() => _loading = true);
 
-    final apiUrl = 'http://localhost:5000/fetch_all'; // your Flask API
+    final apiUrl = '${Config.baseUrl}/fetch_all'; // your Flask API
     final data = await fetchCropSamples(apiUrl: apiUrl);
-
+if (!mounted) return;
     setState(() {
       _records = data;
       _loading = false;

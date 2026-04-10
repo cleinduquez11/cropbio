@@ -22,13 +22,15 @@ class _LandingVideoState extends State<LandingVideo> {
   @override
   void initState() {
     super.initState();
-
-    _controller = VideoPlayerController.asset(widget.videoPath)
-      ..initialize().then((_) {
-        setState(() {}); // Refresh when initialized
-        _controller.play();
-      })
-      ..setLooping(true);
+_controller = VideoPlayerController.asset(widget.videoPath)
+  ..setLooping(true)
+  ..setVolume(0)
+  ..initialize().then((_) async {
+    if (!mounted) return;
+    setState(() {});
+    await Future.delayed(const Duration(milliseconds: 150));
+    _controller.play();
+  });
   }
 
   @override

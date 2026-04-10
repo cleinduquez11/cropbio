@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cropbio/Configs/config.dart';
 import 'package:cropbio/Widgets/CustomSnackbar.dart';
 import 'package:http/http.dart' as http;
 
@@ -10,7 +11,7 @@ import 'package:http/http.dart';
 
 Future<dynamic> uploadCropData(Uint8List fileBytes, String fileName,
     String selectedYear, String selectedSeason) async {
-  final uri = Uri.parse("http://localhost:5000/uploadCropData");
+  final uri = Uri.parse("${Config.baseUrl}/uploadCropData");
 
   // Create multipart request
   var request = http.MultipartRequest('POST', uri);

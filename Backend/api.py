@@ -7,14 +7,83 @@ import json
 from flask_cors import CORS
 from bson import ObjectId
 from urllib.parse import quote_plus
-from config import MONGO_URI, DB_NAME, COLLECTIONS, MONGO_URI_LOCAL
+from config import MONGO_URI, DB_NAME, COLLECTIONS, MONGO_URI_LOCAL, EMAIL_ADDRESS,EMAIL_PASSWORD ,FRONTEND_VERIFY_URL
 import certifi
 import pandas as pd
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from itsdangerous import URLSafeTimedSerializer
+
+# Token generator
+serializer = URLSafeTimedSerializer("SECRET_KEY_123")
+
+
+def send_verification_email(user_email):
+
+    try:
+
+        # Generate token
+        token = serializer.dumps(
+            user_email,
+            salt="email-verification"
+        )
+
+        verification_link = (
+            f"{FRONTEND_VERIFY_URL}/{token}"
+        )
+
+        subject = "Verify Your CropBio Account"
+
+        body = f"""
+Hello,
+
+Thank you for registering with CropBio.
+
+Please verify your email by clicking the link below:
+
+{verification_link}
+
+If you did not create this account, ignore this email.
+
+CropBio Team
+"""
+
+        msg = MIMEMultipart()
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = user_email
+        msg["Subject"] = subject
+
+        msg.attach(
+            MIMEText(body, "plain")
+        )
+
+        # Send email
+        with smtplib.SMTP(
+            "smtp.gmail.com", 587
+        ) as server:
+
+            server.starttls()
+
+            server.login(
+                EMAIL_ADDRESS,
+                EMAIL_PASSWORD
+            )
+
+            server.send_message(msg)
+
+        return True, token
+
+    except Exception as e:
+
+        print("Email send error:", e)
+
+        return False, None
 
 # Create a MongoDB client
 # client = MongoClient(MONGO_URI_LOCAL,tlsCAFile=certifi.where())
-client = MongoClient(MONGO_URI_LOCAL)
+client = MongoClient(MONGO_URI)
 # Create a database
 db = client[DB_NAME]
 
@@ -38,6 +107,7 @@ for cols in COLLECTIONS:
 
 #     <------------- Initialize the API --------->
 app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 # CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 CORS(app)
@@ -46,7 +116,7 @@ plant_samples_collection = collections["plant_samples"]
 crop_samples_collection = collections["crop_samples"]
 plots_collection = collections["plots"]
 # collection = collections["crops"]
-# userCollection = collectionss['Users']
+userCollection = collections['users']
 # classroomCollection = collectionss['Classroom']
 # notesCollection = collectionss['Notes']
 
@@ -560,15 +630,376 @@ def upload_plot_file():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@app.route("/signin", methods=["POST"])
+def signin_user():
 
-#             return jsonify({
-#                 "success": True,
-#                 "filename": file.filename,
-#                 "inserted_count": 0,
-#                 "message": "All records are duplicates"
-#             }), 200
+    try:
+        data = request.get_json()
+
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            return jsonify({
+                "success": False,
+                "message": "Email and password required"
+            }), 400
+
+        import hashlib
+
+        hashed_password = hashlib.sha256(
+            password.encode()
+        ).hexdigest()
+
+        # -----------------------------
+        # FIND USER
+        # -----------------------------
+
+        user = userCollection.find_one({
+            "email": email,
+            "password": hashed_password
+        })
+
+        if not user:
+            return jsonify({
+                "success": False,
+                "message": "Invalid email or password"
+            }), 401
+
+        # -----------------------------
+        # CHECK EMAIL VERIFICATION
+        # -----------------------------
+
+        if not user.get("isVerified", False):
+
+            return jsonify({
+                "success": False,
+                "message": "Email not verified",
+                "isVerified": False
+            }), 403
+
+        # -----------------------------
+        # LOGIN SUCCESS
+        # -----------------------------
+
+        # Remove password before sending
+        user.pop("password", None)
+
+        # Convert ObjectId to string
+        user["_id"] = str(user["_id"])
+
+        return jsonify({
+            "success": True,
+            "user": user
+        }), 200
+
+    except Exception as e:
+
+        import traceback
+        traceback.print_exc()
+
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+@app.route("/signup", methods=["POST"])
+def signup_user():
+
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "success": False,
+                "message": "No JSON data received"
+            }), 400
+
+        full_name = data.get("fullName")
+        agency = data.get("agency")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role", "user")  # default role
+        isVerified = data.get("isVerified", False)
+
+        # -----------------------------
+        # VALIDATION
+        # -----------------------------
+
+        if not full_name:
+            return jsonify({
+                "success": False,
+                "message": "Full name is required"
+            }), 400
+
+        if not agency:
+            return jsonify({
+                "success": False,
+                "message": "Agency is required"
+            }), 400
+
+        if not email:
+            return jsonify({
+                "success": False,
+                "message": "Email is required"
+            }), 400
+
+        if not password:
+            return jsonify({
+                "success": False,
+                "message": "Password is required"
+            }), 400
         
+        # -----------------------------
+        # CHECK DUPLICATE EMAIL
+        # -----------------------------
 
+        existing_user = userCollection.find_one({
+            "email": email
+        })
+
+        if existing_user:
+            return jsonify({
+                "success": False,
+                "message": "Email already exists"
+            }), 409
+
+        # -----------------------------
+        # HASH PASSWORD
+        # -----------------------------
+
+        import hashlib
+
+        hashed_password = hashlib.sha256(
+            password.encode()
+        ).hexdigest()
+
+        email_sent, token = send_verification_email(email)
+
+        if not email_sent:
+            return jsonify({
+                "success": False,
+                "message": "Failed to send verification email"
+            }), 500
+
+
+        # -----------------------------
+        # CREATE USER DOCUMENT
+        # -----------------------------
+
+        user_document = {
+            "fullName": full_name,
+            "agency": agency,
+            "email": email,
+            "password": hashed_password,
+            "role": role,
+            "isVerified": isVerified
+        }
+
+        result = userCollection.insert_one(
+            user_document
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "User created successfully",
+            "user_id": str(result.inserted_id)
+        }), 201
+
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+
+
+
+
+@app.route("/verify-email/<token>", methods=["GET"])
+def verify_email(token):
+
+    try:
+
+        email = serializer.loads(
+            token,
+            salt="email-verification",
+            max_age=3600  # 1 hour
+        )
+
+        result = userCollection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "isVerified": True
+                },
+                "$unset": {
+                    "verificationToken": ""
+                }
+            }
+        )
+
+        if result.modified_count > 0:
+
+           return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Verified - CropBio</title>
+
+    <style>
+
+        body {{
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #0F172A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }}
+
+        .container {{
+            width: 100%;
+            max-width: 520px;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }}
+
+        .logo-box {{
+            height: 120px;
+            border-radius: 16px;
+            background: rgba(63,107,42,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }}
+
+        .title {{
+            font-size: 28px;
+            font-weight: bold;
+            color: #111827;
+            margin-bottom: 12px;
+        }}
+
+        .message {{
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }}
+
+        .success-icon {{
+            font-size: 60px;
+            color: #3F6B2A;
+            margin-bottom: 20px;
+        }}
+
+        .login-btn {{
+            display: inline-block;
+            padding: 14px 28px;
+            background-color: #3F6B2A;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }}
+
+        .login-btn:hover {{
+            background-color: #355a23;
+        }}
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="logo-box">
+
+            <img src="http://localhost:5000/static/Cropbio_Logo_Dark.svg"
+                 alt="CropBio Logo"
+                 height="60">
+
+        </div>
+
+        <div class="success-icon">
+            ✔
+        </div>
+
+        <div class="title">
+            Email Verified Successfully
+        </div>
+
+        <div class="message">
+            Your email has been verified.  
+            You can now log in and start using the CropBio system.
+        </div>
+
+        <a href="http://localhost:3000/signin"
+           class="login-btn">
+           Go to Login
+        </a>
+
+    </div>
+
+</body>
+
+</html>
+"""
+
+        else:
+
+            return """
+<!DOCTYPE html>
+<html>
+<body style="
+    background:#0F172A;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    font-family:Arial;
+">
+
+<div style="
+    background:white;
+    padding:40px;
+    border-radius:16px;
+    text-align:center;
+">
+
+<h2 style="color:#DC2626;">
+Verification Failed
+</h2>
+
+<p>
+Invalid or expired verification link.
+</p>
+
+</div>
+
+</body>
+</html>
+"""
+
+    except Exception as e:
+
+        print(e)
+
+        return """
+        <h2>Invalid or Expired Token</h2>
+        """
 
 
 def clean_for_json(doc):

@@ -15,12 +15,17 @@ class LayoutProvider extends ChangeNotifier {
   double get screenHeight => _height;
 
   /// Dynamic content width
-  double get contentWidth {
-    if (isLargeDesktop) return _width * 0.50;
-    if (isDesktop) return 1250;
-    return double.infinity;
-  }
+double get contentWidth {
+  if (isMobile) return double.infinity;
 
+  if (isTablet) return 720;
+
+  if (isDesktop) return 1100;
+
+  if (isLargeDesktop) return 1280;
+
+  return 1280;
+}
   /// Dynamic content height
   double get contentHeight {
     if (isLargeDesktop) return _height * 0.9;
@@ -33,7 +38,7 @@ class LayoutProvider extends ChangeNotifier {
     if (isMobile) return 8;
     if (isTablet) return 12;
     if (isDesktop) return 14;
-    return 8;
+     return (_width - contentWidth) / 2;
   }
 
   /// Padding
@@ -43,6 +48,80 @@ class LayoutProvider extends ChangeNotifier {
     if (isDesktop) return 22;
     return 20;
   }
+
+
+  /// ===============================
+  /// LOGO SIZING
+  /// ===============================
+
+  double get logoWidth {
+    if (isMobile) return 140;
+    if (isTablet) return 180;
+    if (isDesktop) return 220;
+    return 260;
+  }
+
+  double get logoHeight {
+    if (isMobile) return 80;
+    if (isTablet) return 100;
+    if (isDesktop) return 140;
+    return 160;
+  }
+
+  /// ===============================
+  /// ICON SIZING
+  /// ===============================
+
+  double get iconSize {
+    if (isMobile) return 20;
+    if (isTablet) return 22;
+    if (isDesktop) return 24;
+    return 26;
+  }
+
+  double get buttonIconSize {
+    if (isMobile) return 20;
+    if (isTablet) return 22;
+    if (isDesktop) return 24;
+    return 26;
+  }
+
+  /// ===============================
+  /// FONT SIZING
+  /// ===============================
+
+  double get titleFontSize {
+    if (isMobile) return 18;
+    if (isTablet) return 20;
+    if (isDesktop) return 22;
+    return 24;
+  }
+
+  double get bodyFontSize {
+    if (isMobile) return 14;
+    if (isTablet) return 15;
+    if (isDesktop) return 16;
+    return 17;
+  }
+
+  double get smallFontSize {
+    if (isMobile) return 12;
+    if (isTablet) return 13;
+    if (isDesktop) return 14;
+    return 15;
+  }
+
+  /// ===============================
+  /// APP BAR HEIGHT
+  /// ===============================
+
+  double get appBarHeight {
+    if (isMobile) return 60;
+    if (isTablet) return 70;
+    if (isDesktop) return 90;
+    return 100;
+  }
+
 
   double get verticalPadding {
     if (isMobile) return 12;

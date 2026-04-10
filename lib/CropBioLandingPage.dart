@@ -127,6 +127,8 @@ class _LandingPageState extends State<LandingPage> {
                                   ),
                           ),
                         ),
+                      
+                      
                       ),
                     ),
 
@@ -140,7 +142,7 @@ class _LandingPageState extends State<LandingPage> {
                       delay: const Duration(milliseconds: 600),
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          vertical: layout.verticalPadding * 2,
+                          vertical: layout.verticalPadding,
                         ),
                         child: Center(
                           child: SizedBox(
@@ -643,7 +645,7 @@ class _VisionImage extends StatelessWidget {
       ),
       child: SvgPicture.asset(
         "lib/Assets/Cropbio_Logo_Dark.svg",
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
       ),
     );
   }
