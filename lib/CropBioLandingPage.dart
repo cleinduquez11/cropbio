@@ -3,6 +3,7 @@ import 'package:cropbio/Models/Crop_Summary.dart';
 import 'package:cropbio/Pherips/LandingCarouselVid.dart';
 import 'package:cropbio/Pherips/LayoutWrapper.dart';
 import 'package:cropbio/Pherips/Navbar.dart';
+import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:cropbio/Pherips/TitleBar.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
@@ -208,7 +209,7 @@ class _LandingPageState extends State<LandingPage> {
                       child: Center(
                         child: SizedBox(
                           width: layout.contentWidth,
-                          child: const _ResearchAnalyticsSection(),
+                          child:_ResearchAnalyticsSection(),
                         ),
                       ),
                     ),
@@ -893,8 +894,15 @@ class _SignupFormState extends State<_SignupForm> {
   }
 }
 
-class _ResearchAnalyticsSection extends StatelessWidget {
-  const _ResearchAnalyticsSection();
+class _ResearchAnalyticsSection extends StatefulWidget {
+ const _ResearchAnalyticsSection();
+
+  @override
+  State<_ResearchAnalyticsSection> createState() => _ResearchAnalyticsSectionState();
+}
+
+class _ResearchAnalyticsSectionState extends State<_ResearchAnalyticsSection> {
+  final GlobalKey dashBoardKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -1030,6 +1038,7 @@ class _ResearchAnalyticsSection extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: ElevatedButton.icon(
+                    key: dashBoardKey,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3F6B2A),
                       padding: const EdgeInsets.symmetric(
@@ -1039,8 +1048,21 @@ class _ResearchAnalyticsSection extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pushNamed(context, "/dashboard");
+                      final RenderBox box = dashBoardKey.currentContext!
+                              .findRenderObject() as RenderBox;
+
+                          final position = box.localToGlobal(Offset.zero);
+
+                          final screenSize = MediaQuery.of(context).size;
+
+                          final direction =
+                              RouteTransitionHelper.getDirectionFromPosition(
+                            position,
+                            screenSize,
+                          );
+                      Navigator.pushNamed(context, "/dashboard", arguments: direction,);
                     },
+                    iconAlignment: IconAlignment.end,
                     icon: Icon(
                       Icons.arrow_forward_ios_outlined,
                       color: Colors.white,
@@ -1140,7 +1162,6 @@ class _ResearchAnalyticsSection extends StatelessWidget {
   }
 
   // ================= DARK BAR CHART =================
-
   Widget _darkBarChart(List<_ChartData> data) {
     return Container(
       padding: const EdgeInsets.all(25),
@@ -1204,6 +1225,8 @@ class _ResearchAnalyticsSection extends StatelessWidget {
     );
   }
 }
+
+
 // Keep your improved dark chart builders here
 // (reuse the dark chart methods from previous message)
 

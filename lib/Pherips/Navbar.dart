@@ -1,3 +1,4 @@
+import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../Providers/LayoutProvider.dart';
@@ -72,9 +73,20 @@ class _MobileNavMenu extends StatelessWidget {
 }
 
 /* ================= DESKTOP NAV ================= */
-class _DesktopNavMenu extends StatelessWidget {
+class _DesktopNavMenu extends StatefulWidget {
   const _DesktopNavMenu();
 
+  @override
+  State<_DesktopNavMenu> createState() => _DesktopNavMenuState();
+}
+
+class _DesktopNavMenuState extends State<_DesktopNavMenu> {
+  // final GlobalKey cropbioMapKey = GlobalKey();
+  final Map<String, GlobalKey> menuKeys = {
+  "Home": GlobalKey(),
+  "Dashboard": GlobalKey(),
+  "Programs": GlobalKey(),
+};
   @override
   Widget build(BuildContext context) {
     final layout = context.watch<LayoutProvider>();
@@ -100,10 +112,24 @@ class _DesktopNavMenu extends StatelessWidget {
           return Expanded(
             child: Center(
               child: TextButton(
+                key: menuKeys[e],
                 onPressed: () {
                   switch (e) {
 
                     case 'Home':
+                      final RenderBox box = menuKeys[e]!.currentContext!
+                              .findRenderObject() as RenderBox;
+
+                          final position = box.localToGlobal(Offset.zero);
+
+                          final screenSize = MediaQuery.of(context).size;
+
+                          final direction =
+                              RouteTransitionHelper.getDirectionFromPosition(
+                            position,
+                            screenSize,
+                          );
+                           Navigator.pushNamed(context, "/dashboard", arguments: direction);
                       print(e);
                       break;
 
@@ -113,7 +139,19 @@ class _DesktopNavMenu extends StatelessWidget {
                       break;
 
                     case 'Programs':
-                      Navigator.pushNamed(context, "/map");
+                     final RenderBox box = menuKeys[e]!.currentContext!
+                              .findRenderObject() as RenderBox;
+
+                          final position = box.localToGlobal(Offset.zero);
+
+                          final screenSize = MediaQuery.of(context).size;
+
+                          final direction =
+                              RouteTransitionHelper.getDirectionFromPosition(
+                            position,
+                            screenSize,
+                          );
+                      Navigator.pushNamed(context, "/map", arguments: direction);
                       print("$e is Selected");
                       break;
 

@@ -1,4 +1,5 @@
 import 'package:cropbio/Models/UserModel.dart';
+import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:cropbio/Providers/UserSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -31,7 +32,15 @@ class ResponsiveTitleBar extends StatefulWidget implements PreferredSizeWidget {
 class _ResponsiveTitleBarState extends State<ResponsiveTitleBar> {
   AppUser? user;
   bool isLoading = true;
-
+  final GlobalKey signInKey = GlobalKey();
+  final GlobalKey signUpKey = GlobalKey();
+  // final GlobalKey signOutKey = GlobalKey();
+  final GlobalKey avatarKey = GlobalKey();
+//       final Map<String, GlobalKey> signOutMenuKey = {
+//   "Profile": GlobalKey(),
+//   "Settings": GlobalKey(),
+//   "SignOut": GlobalKey(),
+// };
   @override
   void initState() {
     super.initState();
@@ -106,11 +115,11 @@ class _ResponsiveTitleBarState extends State<ResponsiveTitleBar> {
                   //   isLarge: layout.isLargeDesktop,
                   //   onPressed: onToggleTheme,
                   // ),
-                  const SizedBox(width: 8),
-                  _SearchButton(
-                    isLarge: layout.isLargeDesktop,
-                    onPressed: widget.onSearch,
-                  ),
+                  // const SizedBox(width: 8),
+                  // _SearchButton(
+                  //   isLarge: layout.isLargeDesktop,
+                  //   onPressed: widget.onSearch,
+                  // ),
                   if (!layout.isMobile) ...[
                     const SizedBox(width: 12),
 
@@ -118,55 +127,101 @@ class _ResponsiveTitleBarState extends State<ResponsiveTitleBar> {
                     if (user != null) ...[
                       Row(
                         children: [
-                                                   
+                          PopupMenuButton<String>(
+                            offset: const Offset(0, 45),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
 
-                          /// PROFILE BUTTON
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: const Color(0xFF3F6B2A),
-                            child: Text(
-                              user!.fullName.isNotEmpty
-                                  ? user!.fullName[0].toUpperCase()
-                                  : "?",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                            onSelected: (value) async {
+                              switch (value) {
+                                case "profile":
+                                  print("Profile clicked");
+                                  break;
+
+                                case "settings":
+                                  if (!mounted) return;
+                                  Navigator.pushNamed(context, "/settings");
+                                  break;
+
+                                case "logout":
+                                  await UserSession.clearUser();
+
+                                  // if (!mounted) return;
+
+                                  Future.microtask(() {
+                                    if (!context.mounted) return;
+
+                                    Navigator.of(context)
+                                        .pushNamedAndRemoveUntil(
+                                      "/landingpage",
+                                      (route) => false,
+                                    );
+                                  });
+                                  break;
+                              }
+                            },
+
+                            itemBuilder: (context) => [
+                              /// 👤 USER NAME (NOT CLICKABLE)
+                              PopupMenuItem<String>(
+                                enabled: false,
+                                child: Text(
+                                  user!.fullName,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+
+                              const PopupMenuDivider(),
+
+                              /// ⚙ SETTINGS
+                              const PopupMenuItem(
+                                value: "settings",
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.settings_outlined),
+                                    SizedBox(width: 10),
+                                    Text("Settings"),
+                                  ],
+                                ),
+                              ),
+
+                              /// 🚪 LOGOUT
+                              const PopupMenuItem(
+                                value: "logout",
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.logout),
+                                    SizedBox(width: 10),
+                                    Text("Logout"),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            /// Avatar Trigger
+                            child: CircleAvatar(
+                              key: avatarKey,
+                              radius: 18,
+                              backgroundColor: user!.role == "user"
+                                  ? const Color(0xFF3F6B2A)
+                                  : user!.role == "researcher"
+                                      ? Colors.blueAccent
+                                      : Colors.red,
+                              child: Text(
+                                user!.fullName.isNotEmpty
+                                    ? user!.fullName[0].toUpperCase()
+                                    : "?",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                           const SizedBox(width: 10),
-                          /// USER NAME
-                          Text(
-                            "${user!.fullName.split(" ")[0][0].toUpperCase()}${user!.fullName.split(" ")[1][0].toUpperCase()}. ${user!.fullName.split(" ")[2]}",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-
-
-
-                          const SizedBox(width: 10),
-
-                          /// LOGOUT BUTTON (optional)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.logout,
-                              color: Colors.white,
-                            ),
-                            onPressed: () async {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-
-                              await prefs.remove("logged_in_user");
-
-                              if (!mounted) return;
-
-                              Navigator.pushReplacementNamed(
-                                context,
-                                "/signin",
-                              );
-                            },
                           ),
                         ],
                       )
@@ -175,20 +230,52 @@ class _ResponsiveTitleBarState extends State<ResponsiveTitleBar> {
                     /// ================= NOT LOGGED IN =================
                     else ...[
                       _AuthButton(
+                        key: signInKey,
                         label: "Sign In",
                         isPrimary: false,
                         isLarge: layout.isLargeDesktop,
                         onPressed: () {
-                          Navigator.pushNamed(context, "/signin");
+                          final RenderBox box = signInKey.currentContext!
+                              .findRenderObject() as RenderBox;
+
+                          final position = box.localToGlobal(Offset.zero);
+
+                          final screenSize = MediaQuery.of(context).size;
+
+                          final direction =
+                              RouteTransitionHelper.getDirectionFromPosition(
+                            position,
+                            screenSize,
+                          );
+
+                          Navigator.pushNamed(
+                            context,
+                            "/signin",
+                            arguments: direction,
+                          );
                         },
                       ),
                       const SizedBox(width: 8),
                       _AuthButton(
+                        key: signUpKey,
                         label: "Sign Up",
                         isPrimary: true,
                         isLarge: layout.isLargeDesktop,
                         onPressed: () {
-                          Navigator.pushNamed(context, "/signup");
+                          final RenderBox box = signUpKey.currentContext!
+                              .findRenderObject() as RenderBox;
+
+                          final position = box.localToGlobal(Offset.zero);
+
+                          final screenSize = MediaQuery.of(context).size;
+
+                          final direction =
+                              RouteTransitionHelper.getDirectionFromPosition(
+                            position,
+                            screenSize,
+                          );
+                          Navigator.pushNamed(context, "/signup",
+                              arguments: direction);
                         },
                       ),
                     ]
@@ -291,6 +378,7 @@ class _AuthButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const _AuthButton({
+    super.key, // ✅ REQUIRED
     required this.label,
     required this.isPrimary,
     required this.isLarge,
