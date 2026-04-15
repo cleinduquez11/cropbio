@@ -34,13 +34,14 @@ double get contentWidth {
   }
 
   /// Margins
-  double get outerMargin {
-    if (isMobile) return 8;
-    if (isTablet) return 12;
-    if (isDesktop) return 14;
-     return (_width - contentWidth) / 2;
-  }
+double get outerMargin {
+  if (isMobile) return 8;
+  if (isTablet) return 12;
+  if (isDesktop) return 14;
+  if (isLargeDesktop) return 20;
 
+  return 20;
+}
   /// Padding
   double get horizontalPadding {
     if (isMobile) return 12;

@@ -121,202 +121,203 @@ class _SignInPageState extends State<SignInPage> {
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          child: Container(
-            width: layout.isMobile
-                ? double.infinity
-                : layout.contentWidth * 0.5, // centered card feel
-
-            padding: EdgeInsets.symmetric(
-              horizontal: layout.outerMargin,
-              vertical: 20,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 500,
             ),
-
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                /// ================= LOGO =================
-                Container(
-                  height: layout.isMobile ? 90 : 120,
-                  width: layout.isMobile ? 90 : 170,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: layout.outerMargin,
+                vertical: layout.verticalPadding,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  /// ================= LOGO =================
+                  Container(
+                    height: layout.isMobile ? 90 : 120,
+                    width: layout.isMobile ? 90 : 170,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: SvgPicture.asset(
+                      "lib/Assets/Cropbio_Logo_Dark.svg",
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  child: SvgPicture.asset(
-                    "lib/Assets/Cropbio_Logo_Dark.svg",
-                    fit: BoxFit.contain,
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    "Welcome Back",
+                    style: TextStyle(
+                      fontSize: layout.titleFontSize + 6,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 8),
 
-                Text(
-                  "Welcome Back",
-                  style: TextStyle(
-                    fontSize: layout.titleFontSize + 6,
-                    fontWeight: FontWeight.bold,
+                  Text(
+                    "Sign in to CropBio",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: layout.bodyFontSize,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 8),
+                  const Divider(),
 
-                Text(
-                  "Sign in to CropBio",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: layout.bodyFontSize,
-                    color: Colors.grey,
+                  const SizedBox(height: 20),
+
+                  /// ================= FORM =================
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        /// EMAIL
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: "Email",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Email is required";
+                            }
+
+                            final emailRegex = RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            );
+
+                            if (!emailRegex.hasMatch(value)) {
+                              return "Enter a valid email";
+                            }
+
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        /// PASSWORD
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onFieldSubmitted: (_) =>
+                              _submit(), // ✅ ENTER KEY HERE
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Password is required";
+                            }
+
+                            if (value.length < 6) {
+                              return "Password must be at least 6 characters";
+                            }
+
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 25),
 
-                const Divider(),
+                  /// ================= FORGOT PASSWORD =================
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, "/forgot-password");
+                      },
+                      child: const Text("Forgot Password?"),
+                    ),
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
-                /// ================= FORM =================
-                Form(
-                  key: _formKey,
-                  child: Column(
+                  /// ================= SIGN IN BUTTON =================
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3F6B2A),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: _submit,
+                      child: Text(
+                        "Sign In",
+                        style: TextStyle(
+                          fontSize: layout.bodyFontSize,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text("or"),
+                  const SizedBox(height: 20),
+
+                  /// ================= SOCIAL LOGIN =================
+                  _SocialButton(
+                    label: "Continue with Google",
+                    icon: Icons.g_mobiledata,
+                    onPressed: () {},
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _SocialButton(
+                    label: "Continue with Apple",
+                    icon: Icons.apple,
+                    onPressed: () {},
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _SocialButton(
+                    label: "Continue with Email",
+                    icon: Icons.email_outlined,
+                    onPressed: () {},
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// ================= SIGN UP LINK =================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      /// EMAIL
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: "Email",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Email is required";
-                          }
-
-                          final emailRegex = RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                          );
-
-                          if (!emailRegex.hasMatch(value)) {
-                            return "Enter a valid email";
-                          }
-
-                          return null;
-                        },
+                      Text(
+                        "Don't have an account?",
+                        style: TextStyle(fontSize: layout.bodyFontSize),
                       ),
-
-                      const SizedBox(height: 12),
-
-                      /// PASSWORD
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: "Password",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onFieldSubmitted: (_) => _submit(), // ✅ ENTER KEY HERE
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Password is required";
-                          }
-
-                          if (value.length < 6) {
-                            return "Password must be at least 6 characters";
-                          }
-
-                          return null;
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, "/signup");
                         },
-                      ),
+                        child: const Text("Sign Up"),
+                      )
                     ],
                   ),
-                ),
-                const SizedBox(height: 25),
-
-                /// ================= FORGOT PASSWORD =================
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, "/forgot-password");
-                    },
-                    child: const Text("Forgot Password?"),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                /// ================= SIGN IN BUTTON =================
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3F6B2A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: _submit,
-                    child: Text(
-                      "Sign In",
-                      style: TextStyle(
-                        fontSize: layout.bodyFontSize,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Text("or"),
-                const SizedBox(height: 20),
-
-                /// ================= SOCIAL LOGIN =================
-                _SocialButton(
-                  label: "Continue with Google",
-                  icon: Icons.g_mobiledata,
-                  onPressed: () {},
-                ),
-
-                const SizedBox(height: 10),
-
-                _SocialButton(
-                  label: "Continue with Apple",
-                  icon: Icons.apple,
-                  onPressed: () {},
-                ),
-
-                const SizedBox(height: 10),
-
-                _SocialButton(
-                  label: "Continue with Email",
-                  icon: Icons.email_outlined,
-                  onPressed: () {},
-                ),
-
-                const SizedBox(height: 20),
-
-                /// ================= SIGN UP LINK =================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account?",
-                      style: TextStyle(fontSize: layout.bodyFontSize),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, "/signup");
-                      },
-                      child: const Text("Sign Up"),
-                    )
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

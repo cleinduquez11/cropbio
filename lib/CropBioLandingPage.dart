@@ -320,8 +320,8 @@ class _LandingPageState extends State<LandingPage> {
                                 assetPath: "lib/Assets/Agency_Logos/MMSU.png",
                               ),
                               _PartnerLogo(
-                                name: "DA",
-                                assetPath: "lib/Assets/Agency_Logos/DA.png",
+                                name: "PhilSA",
+                                assetPath: "lib/Assets/Agency_Logos/PhilSa.png",
                               ),
                               _PartnerLogo(
                                 name: "CHED",
