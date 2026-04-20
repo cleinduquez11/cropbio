@@ -58,7 +58,7 @@ class _LandingPageState extends State<LandingPage> {
                     ScrollReveal(
                         delay: const Duration(milliseconds: 200),
                         child: LandingVideo(
-                            videoPath: 'lib/Assets/biodiversity.mp4')),
+                            videoPath: 'lib/Assets/final.mp4')),
                     Divider(
                       thickness: 1,
                       height: 1,

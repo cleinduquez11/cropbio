@@ -1038,6 +1038,26 @@ def fetch_all():
 
 
 
+@app.route("/fetch_users", methods=["GET"])
+def fetch_users():
+    try:
+        # Get all users and convert ObjectId to string
+        users_collection = db['users']
+        records = []
+        for doc in users_collection.find():
+            doc["_id"] = str(doc["_id"])
+            doc = clean_for_json(doc)  # <-- clean NaN / Inf
+            records.append(doc)
+
+        return jsonify({"success": True, "data": records}), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+
 
 
 

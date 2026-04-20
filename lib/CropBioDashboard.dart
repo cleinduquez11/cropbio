@@ -1,9 +1,11 @@
 import 'package:cropbio/API/UploadCsv.dart';
 import 'package:cropbio/API/FetchAll.dart';
+import 'package:cropbio/API/UserAPi.dart';
 import 'package:cropbio/Configs/config.dart';
 import 'package:cropbio/DashboardWidgets/Overview.dart';
 import 'package:cropbio/DashboardWidgets/PlotRecords.dart';
 import 'package:cropbio/DashboardWidgets/UploadSection.dart';
+import 'package:cropbio/DashboardWidgets/UserRecords.dart';
 import 'package:cropbio/Widgets/CustomSnackbar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -76,10 +78,14 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
   List<Map<String, dynamic>> _records = [];
   bool _loading = true;
 
+  List<Map<String, dynamic>> _userRecords = [];
+  bool _userLoading = true;
+
   @override
   void initState() {
     super.initState();
     loadCropSamples(); // call function on init
+      loadUsers();
   }
 
   /// Call the API service
@@ -95,10 +101,27 @@ if (!mounted) return;
     });
   }
 
+
+  Future<void> loadUsers() async {
+  setState(() => _userLoading = true);
+
+  final apiUrl = '${Config.baseUrl}/fetch_users';
+
+  final data = await fetchUsers(apiUrl: apiUrl);
+
+  if (!mounted) return;
+
+  setState(() {
+    _userRecords = data;
+    _userLoading = false;
+  });
+}
+
   final List<String> _menuItems = [
     "Overview",
     "Plot Records",
     "Upload Data",
+    "User Records",
     "Reports",
     "Settings"
   ];
@@ -196,7 +219,8 @@ if (!mounted) return;
       children: [
         _buildOverview(),
         _buildPlotRecords(),
-        UploadSection()
+        UploadSection(),
+         _buildUserRecords(),   
         // UploadSection(
         //   onUploadCropData: _pickAndUploadCropData,
         //   onUploadPlotData: _pickAndUploadPlotData,
@@ -216,6 +240,17 @@ if (!mounted) return;
       ],
     );
   }
+
+
+
+Widget _buildUserRecords() {
+  return UserRecords(
+    records: _userRecords,
+    loading: _userLoading,
+  );
+}
+
+
   // ================= OVERVIEW =================
 
   Widget _buildOverview() {
