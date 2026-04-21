@@ -57,8 +57,7 @@ class _LandingPageState extends State<LandingPage> {
                   children: [
                     ScrollReveal(
                         delay: const Duration(milliseconds: 200),
-                        child: LandingVideo(
-                            videoPath: 'lib/Assets/final.mp4')),
+                        child: LandingVideo(videoPath: 'lib/Assets/final.mp4')),
                     Divider(
                       thickness: 1,
                       height: 1,
@@ -84,20 +83,27 @@ class _LandingPageState extends State<LandingPage> {
                                         number:
                                             summaryData?.totalAccessions ?? 0,
                                         suffix: "+",
-                                        label: "Crop Varieties",
+                                        label: "Crop Accessions",
+                                        icon: Icons.eco,
+                                        description:
+                                            "Documented plant varieties preserved for research and conservation.",
                                       ),
-                                      SizedBox(height: 20),
                                       _StatCard(
                                         number:
                                             summaryData?.totalCropTypes ?? 0,
                                         suffix: "",
-                                        label: "Crop Types",
+                                        label: "Crop Species",
+                                        icon: Icons.grass,
+                                        description:
+                                            "Different crop groups studied across biodiversity programs.",
                                       ),
-                                      SizedBox(height: 20),
                                       _StatCard(
                                         number: summaryData?.totalFields ?? 0,
                                         suffix: "",
                                         label: "Experimental Fields",
+                                        icon: Icons.science,
+                                        description:
+                                            "Active research sites supporting crop trials and monitoring.",
                                       ),
                                     ],
                                   )
@@ -109,27 +115,32 @@ class _LandingPageState extends State<LandingPage> {
                                         number:
                                             summaryData?.totalAccessions ?? 0,
                                         suffix: "+",
-                                        label: "Crop Varieties",
+                                        label: "Crop Accessions",
+                                        icon: Icons.eco,
+                                        description:
+                                            "Documented plant varieties preserved for research and conservation.",
                                       ),
-                                      SizedBox(height: 20),
                                       _StatCard(
                                         number:
                                             summaryData?.totalCropTypes ?? 0,
                                         suffix: "",
-                                        label: "Crop Types",
+                                        label: "Crop Species",
+                                        icon: Icons.grass,
+                                        description:
+                                            "Different crop groups studied across biodiversity programs.",
                                       ),
-                                      SizedBox(height: 20),
                                       _StatCard(
                                         number: summaryData?.totalFields ?? 0,
                                         suffix: "",
                                         label: "Experimental Fields",
+                                        icon: Icons.science,
+                                        description:
+                                            "Active research sites supporting crop trials and monitoring.",
                                       ),
                                     ],
                                   ),
                           ),
                         ),
-                      
-                      
                       ),
                     ),
 
@@ -209,7 +220,7 @@ class _LandingPageState extends State<LandingPage> {
                       child: Center(
                         child: SizedBox(
                           width: layout.contentWidth,
-                          child:_ResearchAnalyticsSection(),
+                          child: _ResearchAnalyticsSection(),
                         ),
                       ),
                     ),
@@ -657,10 +668,16 @@ class _StatCard extends StatefulWidget {
   final String suffix;
   final String label;
 
+  /// NEW
+  final String description;
+  final IconData icon;
+
   const _StatCard({
     required this.number,
     required this.suffix,
     required this.label,
+    required this.description,
+    required this.icon,
   });
 
   @override
@@ -680,9 +697,30 @@ class _StatCardState extends State<_StatCard> with TickerProviderStateMixin {
       duration: const Duration(seconds: 2),
     );
 
-    _animation = IntTween(begin: 0, end: widget.number).animate(_controller);
+    _setupAnimation();
+  }
 
-    _controller.forward();
+  void _setupAnimation() {
+    _animation = IntTween(
+      begin: 0,
+      end: widget.number,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void didUpdateWidget(covariant _StatCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.number != widget.number) {
+      _setupAnimation();
+    }
   }
 
   @override
@@ -698,18 +736,52 @@ class _StatCardState extends State<_StatCard> with TickerProviderStateMixin {
       builder: (_, __) {
         return Column(
           children: [
+            /// 🌱 ICON
+            Icon(
+              widget.icon,
+              size: 36,
+              color: const Color(0xFF3F6B2A),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// 🔢 NUMBER
             Text(
               "${_animation.value}${widget.suffix}",
               style: const TextStyle(
-                fontSize: 42,
+                fontSize: 44,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF3F6B2A),
               ),
             ),
+
             const SizedBox(height: 8),
+
+            /// 🏷 LABEL
             Text(
               widget.label,
-              style: TextStyle(color: Colors.black),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            /// 📝 DESCRIPTION (NEW)
+            SizedBox(
+              width: 240,
+              child: Text(
+                widget.description,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+              ),
             ),
           ],
         );
@@ -895,10 +967,11 @@ class _SignupFormState extends State<_SignupForm> {
 }
 
 class _ResearchAnalyticsSection extends StatefulWidget {
- const _ResearchAnalyticsSection();
+  const _ResearchAnalyticsSection();
 
   @override
-  State<_ResearchAnalyticsSection> createState() => _ResearchAnalyticsSectionState();
+  State<_ResearchAnalyticsSection> createState() =>
+      _ResearchAnalyticsSectionState();
 }
 
 class _ResearchAnalyticsSectionState extends State<_ResearchAnalyticsSection> {
@@ -1049,18 +1122,22 @@ class _ResearchAnalyticsSectionState extends State<_ResearchAnalyticsSection> {
                     ),
                     onPressed: () {
                       final RenderBox box = dashBoardKey.currentContext!
-                              .findRenderObject() as RenderBox;
+                          .findRenderObject() as RenderBox;
 
-                          final position = box.localToGlobal(Offset.zero);
+                      final position = box.localToGlobal(Offset.zero);
 
-                          final screenSize = MediaQuery.of(context).size;
+                      final screenSize = MediaQuery.of(context).size;
 
-                          final direction =
-                              RouteTransitionHelper.getDirectionFromPosition(
-                            position,
-                            screenSize,
-                          );
-                      Navigator.pushNamed(context, "/dashboard", arguments: direction,);
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      // Navigator.pushNamed(
+                      //   context,
+                      //   "/dashboard",
+                      //   arguments: direction,
+                      // );
                     },
                     iconAlignment: IconAlignment.end,
                     icon: Icon(
@@ -1225,7 +1302,6 @@ class _ResearchAnalyticsSectionState extends State<_ResearchAnalyticsSection> {
     );
   }
 }
-
 
 // Keep your improved dark chart builders here
 // (reuse the dark chart methods from previous message)

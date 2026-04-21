@@ -129,12 +129,12 @@ class _DesktopNavMenuState extends State<_DesktopNavMenu> {
                             position,
                             screenSize,
                           );
-                           Navigator.pushNamed(context, "/dashboard", arguments: direction);
+                           Navigator.pushNamed(context, "/landingpage", arguments: direction);
                       print(e);
                       break;
 
                     case 'Dashboard':
-                      Navigator.pushNamed(context, "/dashboard");
+                      Navigator.pushNamed(context, "/landingpage");
                       print("$e is Selected");
                       break;
 

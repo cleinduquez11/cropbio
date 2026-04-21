@@ -69,9 +69,13 @@ class _SignInPageState extends State<SignInPage> {
         );
 
         /// Navigate to dashboard
-        Navigator.pushReplacementNamed(
+        // Navigator.pushReplacementNamed(
+        //   context,
+        //   "/landingpage",
+        // );
+                Navigator.pushReplacementNamed(
           context,
-          "/landingpage",
+          "/dashboard",
         );
       }
 
