@@ -47,11 +47,11 @@ class _MobileNavMenu extends StatelessWidget {
     final items = [
       'Home',
       'Project',
-      'Programs',
+      'Dashboard',
       'Services',
       'Data',
-      'News',
-      'About us'
+      'Updates',
+      'About Us'
     ];
 
     return Align(
@@ -83,10 +83,14 @@ class _DesktopNavMenu extends StatefulWidget {
 class _DesktopNavMenuState extends State<_DesktopNavMenu> {
   // final GlobalKey cropbioMapKey = GlobalKey();
   final Map<String, GlobalKey> menuKeys = {
-  "Home": GlobalKey(),
-  "Dashboard": GlobalKey(),
-  "Programs": GlobalKey(),
-};
+    "Home": GlobalKey(),
+    "Dashboard": GlobalKey(),
+    "Programs": GlobalKey(),
+    "Data": GlobalKey(),
+    "Services": GlobalKey(),
+    "Updates": GlobalKey(),
+    "About Us": GlobalKey(),
+  };
   @override
   Widget build(BuildContext context) {
     final layout = context.watch<LayoutProvider>();
@@ -94,81 +98,149 @@ class _DesktopNavMenuState extends State<_DesktopNavMenu> {
     final items = [
       'Home',
       'Project',
-      'Programs',
+      'Dashboard',
       'Services',
       'Data',
-      'News',
-      'About us'
+      'Updates',
+      'About Us'
     ];
     return SizedBox(
       width: double.infinity,
-
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.center,
-
         children: items.map((e) {
-
           return Expanded(
             child: Center(
               child: TextButton(
                 key: menuKeys[e],
                 onPressed: () {
                   switch (e) {
-
                     case 'Home':
-                      final RenderBox box = menuKeys[e]!.currentContext!
-                              .findRenderObject() as RenderBox;
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
 
-                          final position = box.localToGlobal(Offset.zero);
+                      final position = box.localToGlobal(Offset.zero);
 
-                          final screenSize = MediaQuery.of(context).size;
+                      final screenSize = MediaQuery.of(context).size;
 
-                          final direction =
-                              RouteTransitionHelper.getDirectionFromPosition(
-                            position,
-                            screenSize,
-                          );
-                           Navigator.pushNamed(context, "/landingpage", arguments: direction);
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/landingpage",
+                          arguments: direction);
                       print(e);
                       break;
 
                     case 'Dashboard':
-                      Navigator.pushNamed(context, "/landingpage");
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
+
+                      final position = box.localToGlobal(Offset.zero);
+
+                      final screenSize = MediaQuery.of(context).size;
+
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/map",
+                          arguments: direction);
                       print("$e is Selected");
                       break;
 
-                    case 'Programs':
-                     final RenderBox box = menuKeys[e]!.currentContext!
-                              .findRenderObject() as RenderBox;
+                    case 'Data':
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
 
-                          final position = box.localToGlobal(Offset.zero);
+                      final position = box.localToGlobal(Offset.zero);
 
-                          final screenSize = MediaQuery.of(context).size;
+                      final screenSize = MediaQuery.of(context).size;
 
-                          final direction =
-                              RouteTransitionHelper.getDirectionFromPosition(
-                            position,
-                            screenSize,
-                          );
-                      Navigator.pushNamed(context, "/map", arguments: direction);
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/data",
+                          arguments: direction);
+                      print("$e is Selected");
+                      break;
+
+                    case 'Services':
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
+
+                      final position = box.localToGlobal(Offset.zero);
+
+                      final screenSize = MediaQuery.of(context).size;
+
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/services",
+                          arguments: direction);
+                      print("$e is Selected");
+                      break;
+
+                    case 'Updates':
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
+
+                      final position = box.localToGlobal(Offset.zero);
+
+                      final screenSize = MediaQuery.of(context).size;
+
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/updates",
+                          arguments: direction);
+                      print("$e is Selected");
+                      break;
+
+                    case 'About Us':
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
+
+                      final position = box.localToGlobal(Offset.zero);
+
+                      final screenSize = MediaQuery.of(context).size;
+
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/aboutus",
+                          arguments: direction);
                       print("$e is Selected");
                       break;
 
                     default:
                   }
                 },
-
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(
                     vertical: layout.verticalPadding / 2,
                   ),
                 ),
-
                 child: Text(
                   e,
-
                   style: TextStyle(
                     fontSize: layout.bodyFontSize,
                     fontWeight: FontWeight.w500,
@@ -177,7 +249,6 @@ class _DesktopNavMenuState extends State<_DesktopNavMenu> {
               ),
             ),
           );
-
         }).toList(),
       ),
     );
