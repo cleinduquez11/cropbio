@@ -433,7 +433,7 @@ class _AboutCTA extends StatelessWidget {
             ),
           ),
           onPressed: () {},
-          child: const Text("Contact Us"),
+          child:  Text("Contact Us", style: TextStyle(color: Colors.black),),
         )
       ],
     );

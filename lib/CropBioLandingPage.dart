@@ -225,45 +225,6 @@ class _LandingPageState extends State<LandingPage> {
                       ),
                     ),
 
-                    // ================= CTA SECTION =================
-                    // Container(
-                    //   width: double.infinity,
-                    //   padding: const EdgeInsets.symmetric(vertical: 80),
-                    //   decoration: const BoxDecoration(
-                    //     gradient: LinearGradient(
-                    //       colors: [
-                    //         Color(0xFF2F4F2F),
-                    //         Color(0xFF1E2E1E),
-                    //       ],
-                    //     ),
-                    //   ),
-                    //   child: Column(
-                    //     children: [
-                    //       const Text(
-                    //         "Join the Future of Crop Research",
-                    //         style: TextStyle(
-                    //           fontSize: 36,
-                    //           fontWeight: FontWeight.bold,
-                    //           color: Colors.white,
-                    //         ),
-                    //       ),
-                    //       const SizedBox(height: 20),
-                    //       ElevatedButton(
-                    //         style: ElevatedButton.styleFrom(
-                    //           backgroundColor: Color(0xFFC6A432),
-                    //           padding: EdgeInsets.symmetric(
-                    //               horizontal: 40, vertical: 18),
-                    //         ),
-                    //         onPressed: () {},
-                    //         child: const Text(
-                    //           "Get Started",
-                    //           style: TextStyle(color: Colors.black),
-                    //         ),
-                    //       )
-                    //     ],
-                    //   ),
-                    // ),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
@@ -372,37 +333,6 @@ class _LandingPageState extends State<LandingPage> {
                         ),
                       ),
                     ),
-                    // Center(
-                    //   child: Card(
-                    //     elevation: 3,
-                    //     margin: EdgeInsets.all(layout.outerMargin),
-                    //     child: Container(
-                    //       width: layout.contentWidth,
-                    //       padding: EdgeInsets.symmetric(
-                    //         horizontal: layout.horizontalPadding,
-                    //         vertical: layout.verticalPadding,
-                    //       ),
-                    //       child: Column(
-                    //         crossAxisAlignment: CrossAxisAlignment.start,
-                    //         children: [
-                    //           const HeaderBanner(),
-                    //           const SizedBox(height: 16),
-                    //           const HeadlineSection(),
-                    //           const SizedBox(height: 20),
-                    //           ResponsiveThreeColumnSection(
-                    //               width: layout.screenWidth),
-                    //           const SizedBox(height: 24),
-                    //           ResponsiveTwoColumnSection(
-                    //               width: layout.screenWidth),
-                    //           const SizedBox(height: 24),
-                    //           const LatestNewsSidebar(),
-                    //           const SizedBox(height: 24),
-                    //           const FooterSection(),
-                    //         ],
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ),

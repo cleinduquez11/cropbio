@@ -323,8 +323,8 @@ class _ServiceCTA extends StatelessWidget {
             backgroundColor: const Color(0xFFC6A432),
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
           ),
-          onPressed: () {},
-          child: const Text("Request a Service"),
+          onPressed: () {}, 
+          child:  Text("Request a Service", style: TextStyle(color: Colors.black),),
         )
       ],
     );

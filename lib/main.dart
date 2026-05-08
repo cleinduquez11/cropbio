@@ -7,8 +7,10 @@ import 'package:cropbio/CropBioServices.dart';
 import 'package:cropbio/CropBioSignin.dart';
 import 'package:cropbio/CropBioSignup.dart';
 import 'package:cropbio/CropBioUpdates.dart';
+import 'package:cropbio/LandingPage.dart';
 import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:cropbio/Pherips/themes.dart';
+import 'package:cropbio/Providers/LandingPage.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:cropbio/Providers/UserSession.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,12 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => LayoutProvider(),
         ),
+
+
+        ChangeNotifierProvider(
+          create: (_) => LandingProvider()..initialize(),
+        ),
+
       ],
       child: CropBiodiversityApp(
         isLoggedIn: isLoggedIn,
@@ -52,7 +60,7 @@ class CropBiodiversityApp extends StatelessWidget {
 
         switch (settings.name) {
           case "/landingpage":
-            page = const LandingPage();
+            page = const LandingPagetest();
             break;
 
           case "/dashboard":
