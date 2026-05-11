@@ -114,7 +114,7 @@ _controller = VideoPlayerController.asset(widget.videoPath)
 
               // Subtitle
               Text(
-                "Advancing research, preserving genetic resources,\nand empowering sustainable agriculture.",
+                "Promoting crop and cropping diversity through innovative space applications",
                 textAlign: TextAlign.center,
                 style: GoogleFonts.montserrat(
                   fontSize: layout.isMobile ? 14 : 18,

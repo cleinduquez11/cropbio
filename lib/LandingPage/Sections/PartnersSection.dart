@@ -38,19 +38,25 @@ class PartnersSection extends StatelessWidget {
             PartnerLogo(
                 name: "MMSU",
                 assetPath:
-                    "lib/Assets/Agency_Logos/MMSU.png",
+                    "lib/Assets/Agency_Logos/MMSU_SMALL.png",
               ),
 
               PartnerLogo(
                 name: "PhilSA",
                 assetPath:
-                    "lib/Assets/Agency_Logos/PhilSa.png",
+                    "lib/Assets/Agency_Logos/PhilSa_SMALL.png",
               ),
 
               PartnerLogo(
                 name: "CHED",
                 assetPath:
-                    "lib/Assets/Agency_Logos/CHED.png",
+                    "lib/Assets/Agency_Logos/CHED_SMALL.png",
+              ),
+
+              PartnerLogo(
+                name: "UNESCAP",
+                assetPath:
+                    "lib/Assets/Agency_Logos/unescap.png",
               ),
             ],
           ),

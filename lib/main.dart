@@ -1,7 +1,6 @@
 import 'package:cropbio/CropBioAboutUs.dart';
 import 'package:cropbio/CropBioDashboard.dart';
 import 'package:cropbio/CropBioDataDownload.dart';
-import 'package:cropbio/CropBioLandingPage.dart';
 import 'package:cropbio/CropBioMap.dart';
 import 'package:cropbio/CropBioServices.dart';
 import 'package:cropbio/CropBioSignin.dart';
@@ -12,9 +11,11 @@ import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:cropbio/Pherips/themes.dart';
 import 'package:cropbio/Providers/LandingPage.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
+import 'package:cropbio/Providers/NewsPage.dart';
 import 'package:cropbio/Providers/UserSession.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,10 @@ Future<void> main() async {
 
         ChangeNotifierProvider(
           create: (_) => LandingProvider()..initialize(),
+        ),
+
+                ChangeNotifierProvider(
+          create: (_) => NewsProvider(),
         ),
 
       ],
@@ -94,7 +99,7 @@ class CropBiodiversityApp extends StatelessWidget {
             break;
 
           default:
-            page = const LandingPage();
+            page = const LandingPagetest();
         }
 
         return PageRouteBuilder(
@@ -117,11 +122,11 @@ class CropBiodiversityApp extends StatelessWidget {
                 break;
 
               case SlideDirection.fromTop:
-                begin = const Offset(0, -1.0);
+                begin = const Offset(0, 1.0);
                 break;
 
               case SlideDirection.fromBottom:
-                begin = const Offset(0, 1.0);
+                begin = const Offset(0, -1.0);
                 break;
             }
 

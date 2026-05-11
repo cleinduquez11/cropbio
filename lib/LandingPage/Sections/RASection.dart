@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class ResearchAnalyticsSection extends StatelessWidget {
-  const ResearchAnalyticsSection({super.key});
+  ResearchAnalyticsSection({super.key});
 
   static final List<_ChartData> cropData = [
     _ChartData("Rice", 40),
@@ -12,12 +12,12 @@ class ResearchAnalyticsSection extends StatelessWidget {
     _ChartData("Root Crops", 15),
   ];
 
-  static final List<_ChartData> resilienceData = [
-    _ChartData("Drought", 30),
-    _ChartData("Flood", 20),
-    _ChartData("Pest", 35),
-    _ChartData("Salinity", 15),
-  ];
+final sdgData = [
+  _ChartData("Food Security", 90),
+  _ChartData("Biodiversity", 85),
+  _ChartData("Climate Adaptation", 80),
+  _ChartData("Yield Stability", 75),
+];
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +55,9 @@ class ResearchAnalyticsSection extends StatelessWidget {
               children: [
                 _analyticsSection(
                   isMobile: isMobile,
-                  title: "Crop Distribution Analysis",
+                  title: "Crop Diversity Monitoring",
                   description:
-                      "Rice and corn dominate accessions under conservation. "
-                      "Vegetables and root crops represent emerging focus areas "
-                      "for climate adaptive research programs.",
+                     "CropBio integrates field surveys, UAV campaigns, and Earth observation technologies to monitor crop and cropping diversity across Southeast Asia. The initiative supports long-term biodiversity conservation and sustainable agriculture.",
                   chart: _darkPieChart(cropData),
                 ),
 
@@ -67,11 +65,10 @@ class ResearchAnalyticsSection extends StatelessWidget {
 
                 _analyticsSection(
                   isMobile: isMobile,
-                  title: "Climate Resilience Traits",
+                  title: "Sustainable Food Systems",
                   description:
-                      "Research focuses on drought resistance, pest tolerance, "
-                      "and adaptive crop performance under extreme environmental conditions.",
-                  chart: _darkBarChart(resilienceData),
+                     "The project supports SDG 2: Zero Hunger by improving understanding of how crop diversity contributes to food security, resilience, nutrition, and sustainable agricultural production systems.",
+                  chart: _darkBarChart(sdgData),
                   reverse: true,
                 ),
 
@@ -101,9 +98,7 @@ class ResearchAnalyticsSection extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       const Text(
-                        "CropBio continues to strengthen sustainable agricultural "
-                        "research through field validation, biodiversity monitoring, "
-                        "and climate-responsive innovation programs.",
+                        "CropBio is a collaborative initiative led by ESCAP and AIRCAS with research partners from the Philippines, Indonesia, and Malaysia. The project develops scalable methodologies and open geospatial datasets for agricultural sustainability.",
                         style: TextStyle(
                           fontSize: 16,
                           height: 1.8,
@@ -247,7 +242,7 @@ class ResearchAnalyticsSection extends StatelessWidget {
       child: SfCircularChart(
         backgroundColor: Colors.transparent,
         title: ChartTitle(
-          text: "Crop Distribution",
+          text: "Crop Diversity Monitoring",
           textStyle: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -304,7 +299,7 @@ class ResearchAnalyticsSection extends StatelessWidget {
       child: SfCartesianChart(
         backgroundColor: Colors.transparent,
         title: ChartTitle(
-          text: "Climate Resilience Traits",
+          text: "Sustainable Food Systems",
           textStyle: const TextStyle(
             color: Colors.white,
             fontSize: 18,

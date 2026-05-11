@@ -1,9 +1,4 @@
-
-
-
-import 'package:cropbio/Pherips/LayoutWrapper.dart';
-import 'package:cropbio/Pherips/Navbar.dart';
-import 'package:cropbio/Pherips/TitleBar.dart';
+import 'package:cropbio/AppShell.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -14,85 +9,99 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = context.watch<LayoutProvider>();
+    final layout = context.read<LayoutProvider>();
 
-    return LayoutWrapper(
-      child: Scaffold(
-        body: Column(
-          children: [
-            ResponsiveTitleBar(title: "About CropBio"),
-            ResponsiveNavBar(),
+    return AppShell(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          /// ================= HERO =================
+          const SliverToBoxAdapter(
+            child: _AboutHero(),
+          ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-
-                    /// ================= HERO =================
-                    const _AboutHero(),
-
-                    /// ================= MISSION / VISION =================
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
-                      ),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: const _MissionVisionSection(),
-                        ),
-                      ),
+          /// ================= MISSION / VISION =================
+          SliverToBoxAdapter(
+            child: Container(
+                 color: Colors.black,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: layout.verticalPadding * 2,
+                  horizontal: 20,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: layout.contentWidth,
                     ),
-
-                    /// ================= ORGANIZATION =================
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
-                      ),
-                      color: const Color(0xFFF4F6F1),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: const _OrganizationSection(),
-                        ),
-                      ),
-                    ),
-
-                    /// ================= STRENGTHS =================
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
-                      ),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: _StrengthSection(),
-                        ),
-                      ),
-                    ),
-
-                    /// ================= CTA =================
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 90, horizontal: 20),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF2F4F2F),
-                            Color(0xFF1E2E1E),
-                          ],
-                        ),
-                      ),
-                      child: const _AboutCTA(),
-                    ),
-                  ],
+                    child: const _MissionVisionSection(),
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          /// ================= ORGANIZATION =================
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                vertical: layout.verticalPadding * 2,
+                horizontal: 20,
+              ),
+              color: const Color(0xFFF4F6F1),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout.contentWidth,
+                  ),
+                  child: const _OrganizationSection(),
+                ),
+              ),
+            ),
+          ),
+
+          /// ================= STRENGTHS =================
+          SliverToBoxAdapter(
+
+
+            child: Container(
+              color: Colors.black,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: layout.verticalPadding * 2,
+                  horizontal: 20,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      
+                      maxWidth: layout.contentWidth,
+                    ),
+                    child: _StrengthSection(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          /// ================= CTA =================
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 90, horizontal: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF2F4F2F),
+                    Color(0xFF1E2E1E),
+                  ],
+                ),
+              ),
+              child: const _AboutCTA(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -154,6 +163,7 @@ class _AboutHero extends StatelessWidget {
     );
   }
 }
+
 class _MissionVisionSection extends StatelessWidget {
   const _MissionVisionSection();
 
@@ -245,7 +255,7 @@ class _InfoBlock extends StatelessWidget {
             text,
             style: const TextStyle(
               height: 1.7,
-              color: Colors.white54 ,
+              color: Colors.white54,
             ),
           ),
         ],
@@ -264,7 +274,8 @@ class _OrganizationSection extends StatelessWidget {
       children: [
         Text(
           "Who We Are",
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,color: Colors.black),
+          style: TextStyle(
+              fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
         ),
         SizedBox(height: 20),
         Text(
@@ -287,7 +298,6 @@ class _StrengthSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         /// ================= TITLE =================
         const Text(
           "What We Do",
@@ -373,7 +383,7 @@ class _StrengthCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -385,8 +395,7 @@ class _StrengthCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(item.icon,
-              size: 40, color: const Color(0xFF3F6B2A)),
+          Icon(item.icon, size: 40, color: const Color(0xFF3F6B2A)),
           const SizedBox(height: 15),
           Text(
             item.title,
@@ -433,7 +442,10 @@ class _AboutCTA extends StatelessWidget {
             ),
           ),
           onPressed: () {},
-          child:  Text("Contact Us", style: TextStyle(color: Colors.black),),
+          child: Text(
+            "Contact Us",
+            style: TextStyle(color: Colors.black),
+          ),
         )
       ],
     );

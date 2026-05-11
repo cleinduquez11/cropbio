@@ -1,13 +1,9 @@
-
-
-import 'package:cropbio/Pherips/LayoutWrapper.dart';
-import 'package:cropbio/Pherips/Navbar.dart';
-import 'package:cropbio/Pherips/TitleBar.dart';
+import 'package:cropbio/AppShell.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
+import 'package:cropbio/Providers/NewsPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-
 
 class _NewsPost {
   final String title;
@@ -23,78 +19,75 @@ class _NewsPost {
   });
 }
 
-
-class NewsPage extends StatefulWidget {
+class NewsPage extends StatelessWidget {
   const NewsPage({super.key});
 
   @override
-  State<NewsPage> createState() => _NewsPageState();
-}
-
-class _NewsPageState extends State<NewsPage> {
-  String query = "";
-
-  @override
   Widget build(BuildContext context) {
-    final layout = context.watch<LayoutProvider>();
+    final layout = context.read<LayoutProvider>();
 
-    return LayoutWrapper(
-      child: Scaffold(
-        body: Column(
-          children: [
-            ResponsiveTitleBar(title: "News & Updates"),
-            ResponsiveNavBar(),
+    return AppShell(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          /// HERO
+          const SliverToBoxAdapter(
+            child: _NewsHero(),
+          ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-
-                    /// HERO
-                    const _NewsHero(),
-
-                    /// SEARCH BAR
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding,
-                      ),
-                      color: const Color(0xFFF4F6F1),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: _SearchBar(
-                            onChanged: (val) {
-                              setState(() => query = val);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    /// POSTS GRID
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
-                      ),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: _NewsGrid(query: query),
-                        ),
-                      ),
-                    ),
-                  ],
+          /// SEARCH
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                vertical: layout.verticalPadding,
+                horizontal: 20,
+              ),
+              color: const Color(0xFFF4F6F1),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout.contentWidth,
+                  ),
+                  child: _SearchBar(
+                    onChanged: context.read<NewsProvider>().updateQuery,
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          /// POSTS
+          SliverPadding(
+            padding: EdgeInsets.symmetric(
+              vertical: layout.verticalPadding * 2,
+              horizontal: 20,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout.contentWidth,
+                  ),
+                  child: Selector<NewsProvider, String>(
+                    selector: (_, provider) => provider.query,
+                    builder: (_, query, __) {
+                      return RepaintBoundary(
+                        child: _NewsGrid(
+                          query: query,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
 
 class _NewsHero extends StatelessWidget {
   const _NewsHero();
@@ -116,18 +109,15 @@ class _NewsHero extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
-            children:  [
-
+            children: [
               SizedBox(
-                height: 70, // 👈 reduced from 130
+                height: 90, // 👈 reduced from 130
                 child: SvgPicture.asset(
                   "lib/Assets/Cropbio_Logo_Dark.svg",
                   fit: BoxFit.contain,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               Text(
                 "News & Research Updates",
                 textAlign: TextAlign.center,
@@ -170,15 +160,24 @@ class _SearchBar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             blurRadius: 10,
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
           )
         ],
       ),
       child: TextField(
         onChanged: onChanged,
+        style: const TextStyle(
+          color: Colors.black,
+        ),
         decoration: const InputDecoration(
-          icon: Icon(Icons.search),
+          icon: Icon(
+            Icons.search,
+            color: Colors.black54,
+          ),
           hintText: "Search news, updates, or keywords...",
+          hintStyle: TextStyle(
+            color: Colors.black45,
+          ),
           border: InputBorder.none,
         ),
       ),
@@ -193,7 +192,6 @@ class _NewsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final posts = [
       _NewsPost(
         title: "Drone Mapping Expands Field Coverage",
@@ -228,8 +226,9 @@ class _NewsGrid extends StatelessWidget {
             ? 4
             : constraints.maxWidth > 800
                 ? 3
-                : constraints.maxWidth > 500? 2
-                : 1;
+                : constraints.maxWidth > 500
+                    ? 2
+                    : 1;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -269,9 +268,8 @@ class _NewsCardState extends State<_NewsCard> {
       onExit: (_) => setState(() => hover = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        transform: hover
-            ? (Matrix4.identity()..translate(0, -8))
-            : Matrix4.identity(),
+        transform:
+            hover ? (Matrix4.identity()..translate(0, -8)) : Matrix4.identity(),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -279,20 +277,18 @@ class _NewsCardState extends State<_NewsCard> {
           boxShadow: [
             BoxShadow(
               blurRadius: 15,
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
             )
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             /// CATEGORY TAG
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF3F6B2A).withOpacity(0.1),
+                color: const Color(0xFF3F6B2A).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

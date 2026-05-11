@@ -10,7 +10,7 @@ class VisionText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Our Mission",
+          "Advancing Crop Diversity Through Space Technology",
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -18,9 +18,7 @@ class VisionText extends StatelessWidget {
         ),
         SizedBox(height: 20),
         Text(
-          "CropBio is dedicated to preserving genetic diversity, "
-          "supporting research innovation, and empowering sustainable "
-          "agriculture in the Philippines.",
+          "CropBio combines Earth observation, UAV monitoring, field surveys, and geospatial analytics to strengthen agricultural resilience, biodiversity conservation, and food security across Southeast Asia.",
           style: TextStyle(
             fontSize: 18,
             height: 1.6,

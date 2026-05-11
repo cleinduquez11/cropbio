@@ -1,3 +1,4 @@
+import 'package:cropbio/AppShell.dart';
 import 'package:cropbio/Pherips/LayoutWrapper.dart';
 import 'package:cropbio/Pherips/Navbar.dart';
 import 'package:cropbio/Pherips/TitleBar.dart';
@@ -25,88 +26,91 @@ class ServicesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = context.watch<LayoutProvider>();
+    final layout = context.read<LayoutProvider>();
 
-    return LayoutWrapper(
-      child: Scaffold(
-        body: Column(
-          children: [
-            ResponsiveTitleBar(title: "CropBio Services"),
-            ResponsiveNavBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    /// ================= HERO =================
-                    _ServicesHero(),
+    return AppShell(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          /// ================= HERO =================
+          SliverToBoxAdapter(
+            child: _ServicesHero(),
+          ),
 
-                    /// ================= SERVICES GRID =================
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
-                      ),
-                      color: const Color.fromARGB(255, 0, 0, 0),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                "Our Capabilities",
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                "Comprehensive solutions for crop research, geospatial analysis, and biodiversity monitoring.",
-                                style: TextStyle(color: Colors.black54),
-                              ),
-                              SizedBox(height: 40),
-                              _ServicesGrid(),
-                            ],
-                          ),
+          /// ================= SERVICES GRID =================
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                vertical: layout.verticalPadding * 2,
+              ),
+              color: const Color.fromARGB(255, 0, 0, 0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout.contentWidth,
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Our Capabilities",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-
-                    /// ================= PROCESS =================
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
+                      SizedBox(height: 10),
+                      Text(
+                        "Comprehensive solutions for crop research, geospatial analysis, and biodiversity monitoring.",
+                        style: TextStyle(color: Colors.black54),
                       ),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: const _ServiceProcess(),
-                        ),
-                      ),
-                    ),
-
-                    /// ================= CTA =================
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 100, horizontal: 20),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF2F4F2F),
-                            Color(0xFF1E2E1E),
-                          ],
-                        ),
-                      ),
-                      child: const _ServiceCTA(),
-                    ),
-                  ],
+                      SizedBox(height: 40),
+                      _ServicesGrid(),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          /// ================= PROCESS =================
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: layout.verticalPadding * 2,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout.contentWidth,
+                  ),
+                  child: const _ServiceProcess(),
+                ),
+              ),
+            ),
+          ),
+
+          /// ================= CTA =================
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: 100,
+                horizontal: 20,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF2F4F2F),
+                    Color(0xFF1E2E1E),
+                  ],
+                ),
+              ),
+              child: const _ServiceCTA(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -131,7 +135,7 @@ class _ServicesHero extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(
-                height: 60,
+                height: 90,
                 child: SvgPicture.asset(
                   "lib/Assets/Cropbio_Logo_Dark.svg",
                 ),
@@ -295,7 +299,6 @@ class _ServiceCardState extends State<_ServiceCard> {
   }
 }
 
-
 class _ServiceCTA extends StatelessWidget {
   const _ServiceCTA();
 
@@ -323,14 +326,16 @@ class _ServiceCTA extends StatelessWidget {
             backgroundColor: const Color(0xFFC6A432),
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
           ),
-          onPressed: () {}, 
-          child:  Text("Request a Service", style: TextStyle(color: Colors.black),),
+          onPressed: () {},
+          child: Text(
+            "Request a Service",
+            style: TextStyle(color: Colors.black),
+          ),
         )
       ],
     );
   }
 }
-
 
 class _ServiceProcess extends StatelessWidget {
   const _ServiceProcess();
@@ -380,7 +385,6 @@ class _ServiceProcess extends StatelessWidget {
               style: TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 40),
-
             isMobile
                 ? Column(
                     children: steps
@@ -447,9 +451,8 @@ class _ProcessCardState extends State<_ProcessCard> {
       onExit: (_) => setState(() => hover = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        transform: hover
-            ? (Matrix4.identity()..translate(0, -6))
-            : Matrix4.identity(),
+        transform:
+            hover ? (Matrix4.identity()..translate(0, -6)) : Matrix4.identity(),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),

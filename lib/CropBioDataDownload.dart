@@ -1,133 +1,113 @@
+import 'package:cropbio/AppShell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-import 'package:cropbio/Pherips/LayoutWrapper.dart';
-import 'package:cropbio/Pherips/Navbar.dart';
-import 'package:cropbio/Pherips/TitleBar.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 
-class DataPage extends StatefulWidget {
+class DataPage extends StatelessWidget {
   const DataPage({super.key});
 
   @override
-  State<DataPage> createState() => _DataPageState();
-}
-
-class _DataPageState extends State<DataPage> {
-  @override
   Widget build(BuildContext context) {
-    final layout = context.watch<LayoutProvider>();
+    final layout = context.read<LayoutProvider>();
 
-    return LayoutWrapper(
-      child: Scaffold(
-        body: Column(
-          children: [
-            ResponsiveTitleBar(title: "CropBio Data Access"),
-            ResponsiveNavBar(),
+    return AppShell(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          /// ================= HERO =================
+          SliverToBoxAdapter(
+            child: _DataHero(),
+          ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-
-                    /// ================= HERO =================
-                    _DataHero(),
-
-                    /// ================= DASHBOARD SECTION =================
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        vertical: layout.verticalPadding * 2,
-                      ),
-                      color: const Color.fromARGB(255, 0, 0, 0),
-                      child: Center(
-                        child: SizedBox(
-                          width: layout.contentWidth,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children:  [
-
-                              /// SECTION TITLE
-                              Text(
-                                "Select Data Type",
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              SizedBox(height: 10),
-
-                              Text(
-                                "Choose the type of dataset you want to explore and download.",
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  height: 1.6,
-                                ),
-                              ),
-
-                              SizedBox(height: 40),
-
-                              _DataTypeGrid(),
-                            ],
-                          ),
+          /// ================= DASHBOARD SECTION =================
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                vertical: layout.verticalPadding * 2,
+                horizontal: 20,
+              ),
+              color: const Color.fromARGB(255, 0, 0, 0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: layout.contentWidth,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Select Data Type",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-
-                    /// ================= INFO STRIP =================
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 80,
-                        horizontal: 20,
-                      ),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF2F4F2F),
-                            Color(0xFF1E2E1E),
-                          ],
+                      SizedBox(height: 10),
+                      Text(
+                        "Choose the type of dataset you want to explore and download.",
+                        style: TextStyle(
+                          color: Colors.black54,
+                          height: 1.6,
                         ),
                       ),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 700,
-                          child: Column(
-                            children: [
-                              Text(
-                                "Data Transparency & Research Access",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Text(
-                                "All datasets are curated from validated field research, "
-                                "remote sensing analysis, and institutional studies. "
-                                "Downloadable formats are optimized for GIS, analytics, "
-                                "and academic use.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  height: 1.6,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                      SizedBox(height: 40),
+                      _DataTypeGrid(),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          /// ================= INFO STRIP =================
+          SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: 80,
+                horizontal: 20,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF2F4F2F),
+                    Color(0xFF1E2E1E),
+                  ],
+                ),
+              ),
+              child: const Center(
+                child: SizedBox(
+                    width: 700,
+                    child: Column(children: [
+                      Text(
+                        "Data Transparency & Research Access",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        "All datasets are curated from validated field research, "
+                        "remote sensing analysis, and institutional studies. "
+                        "Downloadable formats are optimized for GIS, analytics, "
+                        "and academic use.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          height: 1.6,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ])),
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
@@ -155,10 +135,9 @@ class _DataHero extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 900),
           child: Column(
             children: [
-
               /// 🌱 SMALLER LOGO
               SizedBox(
-                height: 70, // 👈 reduced from 130
+                height: 90, // 👈 reduced from 130
                 child: SvgPicture.asset(
                   "lib/Assets/Cropbio_Logo_Dark.svg",
                   fit: BoxFit.contain,
@@ -257,11 +236,9 @@ class _DataTypeGrid extends StatelessWidget {
           crossAxisCount = 4; // 💻 large screens
         } else if (constraints.maxWidth >= 800) {
           crossAxisCount = 4; // 📱 tablet
-        }
-        else if (constraints.maxWidth >= 500) {
+        } else if (constraints.maxWidth >= 500) {
           crossAxisCount = 2; // 📱 tablet
-        }
-         else {
+        } else {
           crossAxisCount = 1; // 📱 mobile
         }
 
@@ -283,6 +260,7 @@ class _DataTypeGrid extends StatelessWidget {
     );
   }
 }
+
 class _DataType {
   final String title;
   final String description;
@@ -296,7 +274,6 @@ class _DataType {
     required this.type,
   });
 }
-
 
 class _DataTypeCard extends StatefulWidget {
   final _DataType item;
@@ -312,33 +289,27 @@ class _DataTypeCardState extends State<_DataTypeCard> {
 
   @override
   Widget build(BuildContext context) {
-
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-
       child: GestureDetector(
         onTap: () {
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DataListPage(
-                type: widget.item.type,
-              ),
-            ),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (_) => DataListPage(
+          //       type: widget.item.type,
+          //     ),
+          //   ),
+          // );
         },
-
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           transform: _hover
               ? (Matrix4.identity()..translate(0, -8))
               : Matrix4.identity(),
-
           width: 260,
           padding: const EdgeInsets.all(24),
-
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -352,19 +323,15 @@ class _DataTypeCardState extends State<_DataTypeCard> {
               color: Colors.grey.shade200,
             ),
           ),
-
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Icon(
                 widget.item.icon,
                 size: 40,
                 color: const Color(0xFF3F6B2A),
               ),
-
               const SizedBox(height: 20),
-
               Text(
                 widget.item.title,
                 style: const TextStyle(
@@ -372,9 +339,7 @@ class _DataTypeCardState extends State<_DataTypeCard> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 10),
-
               Text(
                 widget.item.description,
                 style: const TextStyle(
@@ -382,9 +347,7 @@ class _DataTypeCardState extends State<_DataTypeCard> {
                   height: 1.6,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               const Row(
                 children: [
                   Spacer(),
@@ -406,7 +369,6 @@ class DataListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final mockData = [
       "Dataset A",
       "Dataset B",
@@ -417,18 +379,15 @@ class DataListPage extends StatelessWidget {
       appBar: AppBar(
         title: Text("Available $type Data"),
       ),
-
       body: ListView.builder(
         padding: const EdgeInsets.all(20),
         itemCount: mockData.length,
         itemBuilder: (context, index) {
-
           return Card(
             margin: const EdgeInsets.only(bottom: 20),
             child: ListTile(
               title: Text(mockData[index]),
               subtitle: Text("Description of dataset"),
-
               trailing: ElevatedButton(
                 onPressed: () {
                   /// TODO: download logic
