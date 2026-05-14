@@ -11,33 +11,26 @@ import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:cropbio/Pherips/themes.dart';
 import 'package:cropbio/Providers/LandingPage.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
-import 'package:cropbio/Providers/NewsPage.dart';
+import 'package:cropbio/Providers/UpdatesProvider.dart';
 import 'package:cropbio/Providers/UserSession.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   final isLoggedIn = await UserSession.isLoggedIn();
-
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => LayoutProvider(),
         ),
-
-
         ChangeNotifierProvider(
           create: (_) => LandingProvider()..initialize(),
         ),
-
-                ChangeNotifierProvider(
-          create: (_) => NewsProvider(),
+        ChangeNotifierProvider(
+          create: (_) => UpdatesProvider(),
         ),
-
       ],
       child: CropBiodiversityApp(
         isLoggedIn: isLoggedIn,
@@ -52,7 +45,6 @@ class CropBiodiversityApp extends StatelessWidget {
     super.key,
     required this.isLoggedIn,
   });
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -62,46 +54,37 @@ class CropBiodiversityApp extends StatelessWidget {
       initialRoute: "/landingpage",
       onGenerateRoute: (settings) {
         Widget page;
-
         switch (settings.name) {
           case "/landingpage":
             page = const LandingPagetest();
             break;
-
           case "/dashboard":
             page = const Cropbiodashboard();
             break;
-
           case "/map":
             page = const CropBioMap();
             break;
-
           case "/signup":
             page = const SignUpPage();
             break;
-
           case "/signin":
             page = const SignInPage();
             break;
-
           case "/data":
             page = const DataPage();
             break;
           case "/services":
             page = const ServicesPage();
             break;
-
           case "/updates":
-            page = const NewsPage();
+            page = const UpdatesPage();
             break;
           case "/aboutus":
             page = const AboutPage();
             break;
-
           default:
             page = const LandingPagetest();
         }
-
         return PageRouteBuilder(
           settings: settings,
           pageBuilder: (_, __, ___) => page,
@@ -109,27 +92,21 @@ class CropBiodiversityApp extends StatelessWidget {
             SlideDirection direction = settings.arguments is SlideDirection
                 ? settings.arguments as SlideDirection
                 : SlideDirection.fromRight;
-
             Offset begin;
-
             switch (direction) {
               case SlideDirection.fromLeft:
                 begin = const Offset(-1.0, 0);
                 break;
-
               case SlideDirection.fromRight:
                 begin = const Offset(1.0, 0);
                 break;
-
               case SlideDirection.fromTop:
                 begin = const Offset(0, 1.0);
                 break;
-
               case SlideDirection.fromBottom:
                 begin = const Offset(0, -1.0);
                 break;
             }
-
             final tween = Tween(
               begin: begin,
               end: Offset.zero,
@@ -138,7 +115,6 @@ class CropBiodiversityApp extends StatelessWidget {
                 curve: Curves.easeOutCubic,
               ),
             );
-
             return SlideTransition(
               position: animation.drive(tween),
               child: FadeTransition(

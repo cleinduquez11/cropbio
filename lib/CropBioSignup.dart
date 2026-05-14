@@ -190,7 +190,7 @@ class _LeftPanel extends StatelessWidget {
           ),
           child: Center(
             child: SvgPicture.asset(
-              "lib/Assets/Cropbio_Logo_Dark.svg",
+              "lib/Assets/Cropbio_clean.svg",
               fit: BoxFit.contain,
             ),
           ),

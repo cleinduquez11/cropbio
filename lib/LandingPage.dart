@@ -8,9 +8,6 @@ import 'package:cropbio/LandingPage/Sections/StatSection.dart';
 import 'package:cropbio/LandingPage/Widgets/Vision.dart';
 import 'package:cropbio/Pherips/Footer.dart';
 import 'package:cropbio/Pherips/LandingCarouselVid.dart';
-import 'package:cropbio/Pherips/LayoutWrapper.dart';
-import 'package:cropbio/Pherips/Navbar.dart';
-import 'package:cropbio/Pherips/TitleBar.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +22,6 @@ class LandingPagetest extends StatelessWidget {
     return AppShell(
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(
-          decelerationRate: ScrollDecelerationRate.normal,
         ),
         slivers: [
           /// HERO VIDEO
@@ -36,7 +32,7 @@ class LandingPagetest extends StatelessWidget {
               ),
             ),
           ),
-
+      
           /// DIVIDER
           SliverToBoxAdapter(
             child: Divider(
@@ -45,14 +41,14 @@ class LandingPagetest extends StatelessWidget {
               color: Colors.grey.withValues(alpha: 0.15),
             ),
           ),
-
+      
           /// STATS
           SliverToBoxAdapter(
             child: RepaintBoundary(
               child: StatsSection(),
             ),
           ),
-
+      
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -85,7 +81,7 @@ class LandingPagetest extends StatelessWidget {
               ),
             ),
           ),
-
+      
           /// RESEARCH SECTION
           SliverToBoxAdapter(
             child: Container(
@@ -98,7 +94,7 @@ class LandingPagetest extends StatelessWidget {
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: layout.contentWidth,
+                    maxWidth: layout.contentWidth + 10,
                   ),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +124,7 @@ class LandingPagetest extends StatelessWidget {
               ),
             ),
           ),
-
+      
           /// ANALYTICS
           SliverToBoxAdapter(
             child: Selector<LayoutProvider,
@@ -157,19 +153,19 @@ class LandingPagetest extends StatelessWidget {
               },
             ),
           ),
-
+      
           /// CTA SECTION
           const SliverToBoxAdapter(
             child: CTASection(),
           ),
-
+      
           /// PARTNERS
           const SliverToBoxAdapter(
             child: RepaintBoundary(
               child: PartnersSection(),
             ),
           ),
-
+      
           /// FOOTER
           SliverToBoxAdapter(
             child: RepaintBoundary(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class NewsProvider extends ChangeNotifier {
+class UpdatesProvider extends ChangeNotifier {
   String _query = "";
 
   String get query => _query;

@@ -145,7 +145,7 @@ class _SignInPageState extends State<SignInPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: SvgPicture.asset(
-                      "lib/Assets/Cropbio_Logo_Dark.svg",
+                      "lib/Assets/Cropbio_clean.svg",
                       fit: BoxFit.contain,
                     ),
                   ),

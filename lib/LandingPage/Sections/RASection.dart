@@ -36,8 +36,7 @@ final sdgData = [
         const SizedBox(height: 15),
 
         const Text(
-          "An overview of biodiversity distribution and resilience traits "
-          "across ongoing institutional research programs.",
+          "An overview of biodiversity monitoring and Sustaianable Development Goal (SDG) contributions",
           style: TextStyle(
             fontSize: 18,
             height: 1.6,
@@ -137,15 +136,15 @@ final sdgData = [
                             MediaQuery.of(context).size,
                           );
 
-                          // Navigator.pushNamed(
-                          //   context,
-                          //   "/dashboard",
-                          //   arguments: direction,
-                          // );
+                          Navigator.pushNamed(
+                            context,
+                            "/aboutus",
+                            arguments: direction,
+                          );
                         },
-                        icon: const Icon(Icons.arrow_forward_rounded),
+                        icon: const Icon(Icons.arrow_forward_rounded,color: Colors.white,),
                         label: const Text(
-                          "Explore Full Dashboard",
+                          "Explore further",
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                           ),

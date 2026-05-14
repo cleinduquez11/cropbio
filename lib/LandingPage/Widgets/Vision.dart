@@ -22,6 +22,7 @@ class VisionText extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             height: 1.6,
+            color: Colors.white70,
           ),
         ),
       ],
@@ -40,7 +41,7 @@ class VisionImage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: SvgPicture.asset(
-        "lib/Assets/Cropbio_Logo_Dark.svg",
+        "lib/Assets/Cropbio_clean.svg",
         fit: BoxFit.contain,
       ),
     );

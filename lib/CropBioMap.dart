@@ -30,6 +30,17 @@ class _CropBioMapState extends State<CropBioMap> {
         ),
         backgroundColor: Colors.transparent,
 
+         leading: IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        "/landingpage",
+        (route) => false,
+      );
+    },
+  ),
+
       ),
       body: FlutterMap(
         
