@@ -12,7 +12,7 @@ class StatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = context.watch<LayoutProvider>();
+    final layout = context.read<LayoutProvider>();
 
     return Selector<LandingProvider, CropSummary?>(
       selector: (_, provider) => provider.summaryData,
@@ -62,4 +62,5 @@ class StatsSection extends StatelessWidget {
       },
     );
   }
+
 }

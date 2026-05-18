@@ -5,6 +5,7 @@ import 'package:cropbio/LandingPage/Sections/PartnersSection.dart';
 import 'package:cropbio/LandingPage/Sections/RASection.dart';
 import 'package:cropbio/LandingPage/Sections/RFASection.dart';
 import 'package:cropbio/LandingPage/Sections/StatSection.dart';
+import 'package:cropbio/LandingPage/Sections/UpdatesSection.dart';
 import 'package:cropbio/LandingPage/Widgets/Vision.dart';
 import 'package:cropbio/Pherips/Footer.dart';
 import 'package:cropbio/Pherips/LandingCarouselVid.dart';
@@ -21,8 +22,7 @@ class LandingPagetest extends StatelessWidget {
 
     return AppShell(
       child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-        ),
+        physics: const BouncingScrollPhysics(),
         slivers: [
           /// HERO VIDEO
           SliverToBoxAdapter(
@@ -32,7 +32,7 @@ class LandingPagetest extends StatelessWidget {
               ),
             ),
           ),
-      
+
           /// DIVIDER
           SliverToBoxAdapter(
             child: Divider(
@@ -41,14 +41,21 @@ class LandingPagetest extends StatelessWidget {
               color: Colors.grey.withValues(alpha: 0.15),
             ),
           ),
-      
+
           /// STATS
           SliverToBoxAdapter(
             child: RepaintBoundary(
               child: StatsSection(),
             ),
           ),
-      
+
+          /// ================= UPDATES SECTION =================
+          SliverToBoxAdapter(
+            child: RepaintBoundary(
+              child:  UpdatesSection(),
+            ),
+          ),
+
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -81,7 +88,7 @@ class LandingPagetest extends StatelessWidget {
               ),
             ),
           ),
-      
+
           /// RESEARCH SECTION
           SliverToBoxAdapter(
             child: Container(
@@ -124,7 +131,7 @@ class LandingPagetest extends StatelessWidget {
               ),
             ),
           ),
-      
+
           /// ANALYTICS
           SliverToBoxAdapter(
             child: Selector<LayoutProvider,
@@ -144,7 +151,7 @@ class LandingPagetest extends StatelessWidget {
                       constraints: BoxConstraints(
                         maxWidth: layout.contentWidth,
                       ),
-                      child:  RepaintBoundary(
+                      child: RepaintBoundary(
                         child: ResearchAnalyticsSection(),
                       ),
                     ),
@@ -153,19 +160,19 @@ class LandingPagetest extends StatelessWidget {
               },
             ),
           ),
-      
+
           /// CTA SECTION
           const SliverToBoxAdapter(
             child: CTASection(),
           ),
-      
+
           /// PARTNERS
           const SliverToBoxAdapter(
             child: RepaintBoundary(
               child: PartnersSection(),
             ),
           ),
-      
+
           /// FOOTER
           SliverToBoxAdapter(
             child: RepaintBoundary(
@@ -181,3 +188,4 @@ class LandingPagetest extends StatelessWidget {
     );
   }
 }
+
