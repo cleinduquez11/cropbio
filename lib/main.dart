@@ -49,7 +49,7 @@ class CropBiodiversityApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Crop Biodiversity',
+      title: 'MMSU CropBio',
       theme: buildAppTheme(context),
       initialRoute: "/landingpage",
       onGenerateRoute: (settings) {
@@ -74,7 +74,7 @@ class CropBiodiversityApp extends StatelessWidget {
             page = const DataPage();
             break;
           case "/services":
-            page = const ServicesPage();
+            page = const ServicesPage();  
             break;
           case "/updates":
             page = const UpdatesPage();
