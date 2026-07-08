@@ -1,3 +1,4 @@
+import 'package:cropbio/DataPage/Widgets/TabularDataListPage.dart';
 import 'package:flutter/material.dart';
 
 class DataTypeCard extends StatelessWidget {
@@ -22,14 +23,22 @@ class DataTypeCard extends StatelessWidget {
 
           child: GestureDetector(
             onTap: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (_) => DataListPage(
-              //       type: item.type,
-              //     ),
-              //   ),
-              // );
+                if (item.type == "tabular") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TabularDataListPage(
+                    type: item.type,
+              
+                  ),
+                ),
+              );
+                  
+                } else {
+                  
+                }
+
+
             },
 
             child: AnimatedContainer(

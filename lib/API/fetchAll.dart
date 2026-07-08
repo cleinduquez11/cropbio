@@ -4,31 +4,25 @@ import 'package:cropbio/Models/Crop_Summary.dart';
 import 'package:http/http.dart' as http;
 
 /// Fetch crop samples from Flask API
-Future<List<Map<String, dynamic>>> fetchCropSamples(
-    {required String apiUrl}) async {
-  try {
-    final url = Uri.parse(apiUrl);
-    final response = await http.get(url);
+Future<dynamic> fetchCropSamples({required String apiUrl}) async {
+  final response = await http.get(Uri.parse(apiUrl));
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data['success']) {
-        // Convert JSON array to List<Map>
-        // print(data["data"]);
-        return List<Map<String, dynamic>>.from(data['data']);
-      } else {
-        print('API error: ${data['message']}');
-        return [];
-      }
-    } else {
-      print('HTTP error: ${response.statusCode}');
-      return [];
+  if (response.statusCode == 200) {
+    final decoded = jsonDecode(response.body);
+
+    final bool success =
+        decoded['success'] == true || decoded['succeess'] == true;
+
+    if (!success) {
+      throw Exception(decoded['message'] ?? 'Failed to fetch crop samples');
     }
-  } catch (e) {
-    
-    print('Exception: $e');
-    return [];
+
+    // Return the full response because /fetch_all now returns:
+    // { "succeess": true, "collection": [...] }
+    return decoded;
   }
+
+  throw Exception('Failed to fetch crop samples. Status: ${response.statusCode}');
 }
 
 

@@ -6,7 +6,7 @@ REM Initialize Conda (change path if your Anaconda/Miniconda is installed elsewh
 call "C:\Anaconda\Scripts\activate.bat"
 
 REM Activate your environment (replace env_name with your actual env)
-call conda activate coaster_py_env
+call conda activate cropbio-api
 
 echo CropBiodiversity Backend System API is running in debug mode....
 

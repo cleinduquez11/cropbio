@@ -3,7 +3,7 @@
 echo Activating Conda environment...
 
 REM Initialize Conda (change path if your Anaconda/Miniconda is installed elsewhere)
-call "C:\Anaconda\Scripts\activate.bat"
+call "C:\ProgramData\anaconda3\Scripts\activate.bat"
 
 REM Activate your environment (replace env_name with your actual env)
 call conda activate coaster_py_env

@@ -106,12 +106,19 @@ for cols in COLLECTIONS:
 
 
 #     <------------- Initialize the API --------->
-app = Flask(__name__)
 app = Flask(__name__, static_folder="static")
-# CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-CORS(app)
-
+# CORS(
+#     app,
+#     resources={
+#         r"/*": {
+#             "origins": [
+#                 "https://coaster.mmsu.edu.ph/cropbio"
+#             ]
+#         }
+#     }
+# )
 plant_samples_collection = collections["plant_samples"]
 crop_samples_collection = collections["crop_samples"]
 plots_collection = collections["plots"]
@@ -927,7 +934,7 @@ def verify_email(token):
 
         <div class="logo-box">
 
-            <img src="http://localhost:5000/static/Cropbio_Logo_Dark.svg"
+            <img src="https://coaster.mmsu.edu.ph/api/static/Cropbio_Logo_Dark.svg"
                  alt="CropBio Logo"
                  height="60">
 
@@ -1018,26 +1025,81 @@ def clean_for_json(doc):
 
 
 
+# @app.route("/fetch_all", methods=["GET"])
+# def fetch_all():
+#     try:
+#         # Get all documents and convert ObjectId to string
+#         summary_crop_samples_collections = db['2025_Dry_crops']
+#         records = []
+#         for doc in summary_crop_samples_collections.find():
+#             doc["_id"] = str(doc["_id"])
+#             doc = clean_for_json(doc)  # <-- clean NaN / Inf
+#             records.append(doc)
+
+#         return jsonify({"success": True, "data": records}), 200
+
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         return jsonify({"success": False, "message": str(e)}), 500
+
+
 @app.route("/fetch_all", methods=["GET"])
 def fetch_all():
     try:
-        # Get all documents and convert ObjectId to string
-        summary_crop_samples_collections = db['2025_Dry_crops']
-        records = []
-        for doc in summary_crop_samples_collections.find():
-            doc["_id"] = str(doc["_id"])
-            doc = clean_for_json(doc)  # <-- clean NaN / Inf
-            records.append(doc)
+        collections = []
 
-        return jsonify({"success": True, "data": records}), 200
+        # Include crop collections from 2025 up to current year
+        start_year = 2025
+        end_year = datetime.now().year
+
+        seasons = ["Dry", "Wet"]
+
+        existing_collections = db.list_collection_names()
+
+        for year in range(start_year, end_year + 1):
+            for season in seasons:
+                collection_name = f"{year}_{season}_crops"
+
+                # Skip missing collections
+                if collection_name not in existing_collections:
+                    continue
+
+                crop_collection = db[collection_name]
+
+                data = []
+
+                for doc in crop_collection.find().sort("_id", -1):
+                    doc["_id"] = str(doc["_id"])
+
+                    # Add source collection inside each record
+                    doc["source_collection"] = collection_name
+
+                    # Clean NaN / Inf / ObjectId issues
+                    doc = clean_for_json(doc)
+
+                    data.append(doc)
+
+                collections.append({
+                    "season": season,
+                    "year": str(year),
+                    "count": len(data),
+                    "data": data
+                })
+
+        return jsonify({
+            "succeess": True,
+            "collection": collections
+        }), 200
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+    
 @app.route("/fetch_users", methods=["GET"])
 def fetch_users():
     try:
