@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'dart:js_interop';
+import 'dart:typed_data';
 
 import 'package:cropbio/API/fetchAll.dart';
 import 'package:cropbio/Configs/config.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
+import 'package:web/web.dart' as web;
 
 class TabularDataListPage extends StatefulWidget {
   final String type;
@@ -980,20 +982,29 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
     final fileName = 'cropbio_${selectedYear}_${safeSeason}_$timestamp.csv';
 
-    final bytes = utf8.encode(csvContent);
-
-    final blob = html.Blob(
-      [bytes],
-      'text/csv;charset=utf-8',
+    final bytes = Uint8List.fromList(
+      utf8.encode(csvContent),
     );
 
-    final url = html.Url.createObjectUrlFromBlob(blob);
+    final blob = web.Blob(
+      <JSAny>[bytes.toJS].toJS,
+      web.BlobPropertyBag(
+        type: 'text/csv;charset=utf-8',
+      ),
+    );
 
-    html.AnchorElement(href: url)
-      ..setAttribute('download', fileName)
-      ..click();
+    final url = web.URL.createObjectURL(blob);
 
-    html.Url.revokeObjectUrl(url);
+    final anchor = web.HTMLAnchorElement()
+      ..href = url
+      ..download = fileName
+      ..style.display = 'none';
+
+    web.document.body?.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    web.URL.revokeObjectURL(url);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
