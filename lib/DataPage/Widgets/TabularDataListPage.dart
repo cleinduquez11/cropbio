@@ -4,9 +4,12 @@ import 'dart:typed_data';
 
 import 'package:cropbio/API/fetchAll.dart';
 import 'package:cropbio/Configs/config.dart';
+import 'package:cropbio/Pherips/LayoutWrapper.dart';
+import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:web/web.dart' as web;
 
@@ -24,22 +27,26 @@ class TabularDataListPage extends StatefulWidget {
 
 class _TabularDataListPageState extends State<TabularDataListPage> {
   static const Color primaryGreen = Color(0xFF3F6B2A);
-  static const Color darkGreen = Color(0xFF1E2E1E);
-  static const Color mediumGreen = Color(0xFF2F4F2F);
+  static const Color accentGreen = Color(0xFF7A8F3D);
   static const Color goldAccent = Color(0xFFC6A432);
 
-  static const Color lightBg = Color(0xFFF4F6F1);
-  static const Color softBg = Color(0xFFF8F9F6);
-  static const Color cardBg = Colors.white;
+  static const Color darkBg = Color(0xFF0F1712);
+  static const Color darkSidebar = Color(0xFF111C14);
+  static const Color darkSurface = Color(0xFF162216);
+  static const Color darkSurface2 = Color(0xFF1D2B20);
+  static const Color darkSurface3 = Color(0xFF243625);
+  static const Color darkBorder = Color(0xFF2E3E31);
 
-  static const Color darkText = Color(0xFF1F2933);
-  static const Color mutedText = Color(0xFF5F6B5A);
-  static const Color borderGreen = Color(0xFFDDE7D5);
+  static const Color lightText = Color(0xFFF3F7F1);
+  static const Color mutedText = Color(0xFFB7C4B2);
 
   late DynamicCropDataSource _dataSource;
 
   final DataGridController _controller = DataGridController();
   final TextEditingController _searchController = TextEditingController();
+
+  final ScrollController _verticalGridScrollController = ScrollController();
+  final ScrollController _horizontalGridScrollController = ScrollController();
 
   List<Map<String, dynamic>> _records = [];
   List<Map<String, dynamic>> _visibleRecords = [];
@@ -64,7 +71,13 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     super.initState();
 
     selectedYear = DateTime.now().year < 2025 ? 2025 : DateTime.now().year;
-    _dataSource = DynamicCropDataSource([], _columns, _columnAliases);
+
+    _dataSource = DynamicCropDataSource(
+      const [],
+      _columns,
+      _columnAliases,
+      isMobile: false,
+    );
 
     loadCropSamples();
   }
@@ -73,6 +86,8 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
   void dispose() {
     _controller.dispose();
     _searchController.dispose();
+    _verticalGridScrollController.dispose();
+    _horizontalGridScrollController.dispose();
     super.dispose();
   }
 
@@ -93,7 +108,6 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
     try {
       final apiUrl = '${Config.baseUrl}/fetch_all';
-
       final data = await fetchCropSamples(apiUrl: apiUrl);
 
       if (!mounted) return;
@@ -114,13 +128,24 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
         _tableRecords = [];
         _columns = ['#'];
         _columnAliases = {};
-        _dataSource = DynamicCropDataSource([], _columns, _columnAliases);
+        _dataSource = DynamicCropDataSource(
+          const [],
+          _columns,
+          _columnAliases,
+          isMobile: false,
+        );
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: darkGreen,
-          content: Text('Failed to load crop samples: $e'),
+          backgroundColor: darkSurface2,
+          content: Text(
+            'Failed to load crop samples: $e',
+            style: GoogleFonts.nunito(
+              color: lightText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       );
     }
@@ -356,6 +381,8 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
     if (!mounted) return;
 
+    final isMobile = MediaQuery.of(context).size.width < 720;
+
     setState(() {
       _visibleRecords = filteredRecords;
       _tableRecords = filteredRecords;
@@ -366,6 +393,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
         _tableRecords,
         _columns,
         _columnAliases,
+        isMobile: isMobile,
       );
     });
   }
@@ -620,6 +648,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
       if (value is num) return value.toInt();
 
       final parsedMonth = int.tryParse(value.toString());
+
       if (parsedMonth != null && parsedMonth >= 1 && parsedMonth <= 12) {
         return parsedMonth;
       }
@@ -676,6 +705,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
       if (value is String) {
         final parsed = int.tryParse(value);
+
         if (parsed != null) return parsed;
       }
     }
@@ -731,6 +761,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
   void _search(String value) {
     final query = value.toLowerCase().trim();
+    final isMobile = MediaQuery.of(context).size.width < 720;
 
     if (query.isEmpty) {
       setState(() {
@@ -740,6 +771,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
           _tableRecords,
           _columns,
           _columnAliases,
+          isMobile: isMobile,
         );
       });
 
@@ -751,6 +783,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
         if (column == '#') return false;
 
         final value = _valueForColumn(record, column, _columnAliases);
+
         return _cellValueToString(value).toLowerCase().contains(query);
       });
     }).toList();
@@ -762,6 +795,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
         _tableRecords,
         _columns,
         _columnAliases,
+        isMobile: isMobile,
       );
     });
   }
@@ -769,9 +803,15 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
   Future<void> _confirmAndDownloadCsv() async {
     if (_tableRecords.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: darkGreen,
-          content: Text('No data available to download.'),
+        SnackBar(
+          backgroundColor: darkSurface2,
+          content: Text(
+            'No data available to download.',
+            style: GoogleFonts.nunito(
+              color: lightText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       );
 
@@ -780,186 +820,167 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
+      barrierColor: Colors.black.withOpacity(0.55),
       builder: (context) {
+        final width = MediaQuery.of(context).size.width;
+        final isMobile = width < 560;
+
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Container(
-            width: 430,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: borderGreen,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 16 : 24,
+            vertical: 24,
+          ),
+          child: SizedBox(
+            width: isMobile ? width - 32 : 430,
+            child: Container(
+              padding: EdgeInsets.all(isMobile ? 18 : 24),
+              decoration: BoxDecoration(
+                color: darkSurface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: darkBorder,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 30,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 30,
-                  offset: const Offset(0, 14),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 52,
-                      width: 52,
-                      decoration: BoxDecoration(
-                        color: primaryGreen.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.download_rounded,
-                        color: primaryGreen,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Download CSV file?',
-                            style: GoogleFonts.nunito(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: darkText,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'The current filtered table data will be exported as a CSV file.',
-                            style: GoogleFonts.nunito(
-                              fontSize: 14,
-                              height: 1.45,
-                              fontWeight: FontWeight.w600,
-                              color: mutedText,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: lightBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: borderGreen,
-                    ),
-                  ),
-                  child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.table_chart_rounded,
-                        color: primaryGreen,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Records to download',
-                          style: GoogleFonts.nunito(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: darkText,
-                          ),
-                        ),
-                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        height: 52,
+                        width: 52,
                         decoration: BoxDecoration(
-                          color: goldAccent,
-                          borderRadius: BorderRadius.circular(999),
+                          color: primaryGreen.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Text(
-                          '${_tableRecords.length}',
-                          style: GoogleFonts.nunito(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                          ),
+                        child: const Icon(
+                          Icons.download_rounded,
+                          color: accentGreen,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Download CSV file?',
+                              style: GoogleFonts.nunito(
+                                fontSize: isMobile ? 20 : 22,
+                                fontWeight: FontWeight.w900,
+                                color: lightText,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'The current filtered table data will be exported as a CSV file.',
+                              style: GoogleFonts.nunito(
+                                fontSize: 14,
+                                height: 1.45,
+                                fontWeight: FontWeight.w600,
+                                color: mutedText,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 26),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: darkText,
-                          side: const BorderSide(
-                            color: borderGreen,
-                            width: 1.2,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.nunito(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                  const SizedBox(height: 22),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: darkSurface2,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: darkBorder,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context, true),
-                        icon: const Icon(
-                          Icons.file_download_done_rounded,
-                          size: 20,
-                          color: Colors.white,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.table_chart_rounded,
+                          color: accentGreen,
+                          size: 22,
                         ),
-                        label: Text(
-                          'Download',
-                          style: GoogleFonts.nunito(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Records to download',
+                            style: GoogleFonts.nunito(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: lightText,
+                            ),
                           ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryGreen,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: goldAccent,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${_tableRecords.length}',
+                            style: GoogleFonts.nunito(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 26),
+                  if (isMobile)
+                    Column(
+                      children: [
+                        _dialogDownloadButton(
+                          onPressed: () => Navigator.pop(context, true),
+                        ),
+                        const SizedBox(height: 10),
+                        _dialogCancelButton(
+                          onPressed: () => Navigator.pop(context, false),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _dialogCancelButton(
+                            onPressed: () => Navigator.pop(context, false),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _dialogDownloadButton(
+                            onPressed: () => Navigator.pop(context, true),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -969,6 +990,68 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     if (confirmed == true) {
       _downloadCurrentTableAsCsv();
     }
+  }
+
+  Widget _dialogCancelButton({
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: lightText,
+          side: const BorderSide(
+            color: darkBorder,
+            width: 1.2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child: Text(
+          'Cancel',
+          style: GoogleFonts.nunito(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dialogDownloadButton({
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(
+          Icons.file_download_done_rounded,
+          size: 20,
+          color: Colors.black,
+        ),
+        label: Text(
+          'Download',
+          style: GoogleFonts.nunito(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: goldAccent,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
   }
 
   void _downloadCurrentTableAsCsv() {
@@ -1008,8 +1091,14 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: darkGreen,
-        content: Text('CSV downloaded: $fileName'),
+        backgroundColor: darkSurface2,
+        content: Text(
+          'CSV downloaded: $fileName',
+          style: GoogleFonts.nunito(
+            color: lightText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
@@ -1065,8 +1154,14 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
   void _showActionMessage(String action) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: darkGreen,
-        content: Text('$action action triggered.'),
+        backgroundColor: darkSurface2,
+        content: Text(
+          '$action action triggered.',
+          style: GoogleFonts.nunito(
+            color: lightText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
@@ -1081,23 +1176,229 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: lightBg,
-      body: SafeArea(
+    return LayoutWrapper(
+      child: Builder(
+        builder: (context) {
+          final layout = context.watch<LayoutProvider>();
+
+          return Theme(
+            data: ThemeData.dark().copyWith(
+              scaffoldBackgroundColor: darkBg,
+              colorScheme: const ColorScheme.dark(
+                primary: primaryGreen,
+                secondary: accentGreen,
+                surface: darkSurface,
+              ),
+              textTheme: GoogleFonts.nunitoTextTheme(
+                ThemeData.dark().textTheme,
+              ),
+            ),
+            child: Scaffold(
+              backgroundColor: darkBg,
+              drawer: layout.isMobile
+                  ? Drawer(
+                      backgroundColor: darkSidebar,
+                      child: SafeArea(
+                        child: _sidePanel(
+                          layout: layout,
+                          isDrawer: true,
+                        ),
+                      ),
+                    )
+                  : null,
+              body: SafeArea(
+                child: layout.isMobile
+                    ? _mobileLayout(layout)
+                    : _desktopLayout(layout),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _desktopLayout(LayoutProvider layout) {
+    return Row(
+      children: [
+        _sidePanel(layout: layout),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final availableWidth = constraints.maxWidth;
+              final targetWidth = layout.contentWidth > availableWidth
+                  ? availableWidth
+                  : layout.contentWidth;
+
+              return Center(
+                child: SizedBox(
+                  width: targetWidth,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: availableWidth < 900 ? 16 : 28,
+                      vertical: layout.verticalPadding,
+                    ),
+                    child: Column(
+                      children: [
+                        _titleBar(layout),
+                        const SizedBox(height: 24),
+                        Expanded(
+                          child: _tableContainer(layout),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _mobileLayout(LayoutProvider layout) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: layout.verticalPadding,
+      ),
+      child: Column(
+        children: [
+          _titleBar(layout),
+          const SizedBox(height: 12),
+          Expanded(
+            child: _tableContainer(layout),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidePanel({
+    required LayoutProvider layout,
+    bool isDrawer = false,
+  }) {
+    return Container(
+      width: isDrawer ? double.infinity : 280,
+      padding: EdgeInsets.symmetric(
+        horizontal: layout.isMobile ? 16 : 20,
+        vertical: layout.isMobile ? 20 : 28,
+      ),
+      decoration: BoxDecoration(
+        color: darkSidebar,
+        border: Border(
+          right: BorderSide(
+            color: isDrawer ? Colors.transparent : darkBorder,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cropBioLogo(layout),
+          SizedBox(height: layout.isMobile ? 24 : 36),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'FILTER BY YEAR',
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: mutedText,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: layout.isMobile ? 190 : 210,
+                    child: ListView.separated(
+                      itemCount: years.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final year = years[index];
+                        final isSelected = selectedYear == year;
+
+                        return _filterTile(
+                          selected: isSelected,
+                          icon: Icons.calendar_month_rounded,
+                          label: year.toString(),
+                          onTap: () {
+                            selectedYear = year;
+                            _searchController.clear();
+                            _loadData();
+
+                            if (isDrawer) {
+                              Navigator.pop(context);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    'FILTER BY SEASON',
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: mutedText,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _seasonSelector(isDrawer),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterTile({
+    required bool selected,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? primaryGreen : darkSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? primaryGreen : darkBorder,
+          ),
+        ),
         child: Row(
           children: [
-            _sidePanel(),
+            Icon(
+              icon,
+              size: 18,
+              color: selected ? Colors.white : accentGreen,
+            ),
+            const SizedBox(width: 10),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  children: [
-                    _titleBar(context),
-                    const SizedBox(height: 24),
-                    Expanded(
-                      child: _tableContainer(),
-                    ),
-                  ],
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? Colors.white : lightText,
                 ),
               ),
             ),
@@ -1107,104 +1408,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     );
   }
 
-  Widget _sidePanel() {
-    return Container(
-      width: 260,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-      decoration: const BoxDecoration(
-        color: softBg,
-        border: Border(
-          right: BorderSide(
-            color: borderGreen,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _cropBioLogo(),
-          const SizedBox(height: 32),
-          const SizedBox(height: 36),
-          Text(
-            'FILTER BY YEAR',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: mutedText,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 190,
-            child: ListView.separated(
-              itemCount: years.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final year = years[index];
-                final isSelected = selectedYear == year;
-
-                return InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () {
-                    selectedYear = year;
-                    _searchController.clear();
-                    _loadData();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? primaryGreen : cardBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isSelected ? primaryGreen : borderGreen,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_month_rounded,
-                          size: 18,
-                          color: isSelected ? Colors.white : primaryGreen,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          year.toString(),
-                          style: GoogleFonts.nunito(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: isSelected ? Colors.white : darkText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'FILTER BY SEASON',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: mutedText,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _seasonSelector(),
-        ],
-      ),
-    );
-  }
-
-  Widget _seasonSelector() {
+  Widget _seasonSelector(bool isDrawer) {
     return Column(
       children: seasonOptions.map((season) {
         final isSelected = selectedSeason == season;
@@ -1221,65 +1425,211 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
+          child: _filterTile(
+            selected: isSelected,
+            icon: icon,
+            label: season,
             onTap: () {
               selectedSeason = season;
               _searchController.clear();
               _loadData();
+
+              if (isDrawer) {
+                Navigator.pop(context);
+              }
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected ? darkGreen : cardBg,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isSelected ? darkGreen : borderGreen,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: isSelected ? Colors.white : primaryGreen,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    season,
-                    style: GoogleFonts.nunito(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: isSelected ? Colors.white : darkText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         );
       }).toList(),
     );
   }
 
-  Widget _titleBar(BuildContext context) {
+  Widget _titleBar(LayoutProvider layout) {
+    if (layout.isMobile) {
+      return _mobileTitleBar();
+    }
+
+    return _desktopTitleBar();
+  }
+
+  Widget _mobileTitleBar() {
+    return Builder(
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color: darkSurface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: darkBorder,
+            ),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+                color: Colors.black.withOpacity(0.24),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Open filters',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minHeight: 38,
+                  minWidth: 38,
+                ),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: lightText,
+                  size: 24,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Back',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minHeight: 38,
+                  minWidth: 38,
+                ),
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: lightText,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                height: 36,
+                width: 36,
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SvgPicture.asset(
+                  "lib/Assets/Cropbio_clean.svg",
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TABULATED RECORDS',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.nunito(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: lightText,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Crop records for $_selectedFilterLabel',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.nunito(
+                        fontSize: 11,
+                        color: mutedText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 2),
+              SizedBox(
+                width: 38,
+                height: 38,
+                child: IconButton(
+                  tooltip: 'Download CSV',
+                  padding: EdgeInsets.zero,
+                  onPressed: _confirmAndDownloadCsv,
+                  icon: const Icon(
+                    Icons.download_rounded,
+                    color: goldAccent,
+                    size: 22,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 36,
+                height: 38,
+                child: PopupMenuButton<String>(
+                  tooltip: 'More options',
+                  color: darkSurface2,
+                  iconColor: lightText,
+                  padding: EdgeInsets.zero,
+                  iconSize: 22,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'Refresh') {
+                      loadCropSamples();
+                    } else if (value == 'Download') {
+                      _confirmAndDownloadCsv();
+                    } else {
+                      _showActionMessage(value);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    _darkPopupItem(
+                      value: 'Refresh',
+                      icon: Icons.refresh_rounded,
+                      label: 'Refresh',
+                    ),
+                    _darkPopupItem(
+                      value: 'Download',
+                      icon: Icons.download_rounded,
+                      label: 'Download',
+                    ),
+                    _darkPopupItem(
+                      value: 'Print',
+                      icon: Icons.print_rounded,
+                      label: 'Print',
+                    ),
+                    _darkPopupItem(
+                      value: 'Settings',
+                      icon: Icons.settings_rounded,
+                      label: 'Settings',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _desktopTitleBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
       decoration: BoxDecoration(
-        color: cardBg,
+        color: darkSurface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: borderGreen,
+          color: darkBorder,
         ),
         boxShadow: [
           BoxShadow(
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.28),
           ),
         ],
       ),
@@ -1287,29 +1637,48 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
         children: [
           IconButton(
             tooltip: 'Back',
-            color: darkGreen,
+            color: lightText,
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           const SizedBox(width: 10),
+          Container(
+            height: 46,
+            width: 46,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: SvgPicture.asset(
+              "lib/Assets/Cropbio_clean.svg",
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'TABULATED RECORDS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: darkText,
+                    color: lightText,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Crop records overview for $_selectedFilterLabel',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
                     fontSize: 14,
                     color: mutedText,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -1321,7 +1690,13 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
               Icons.download_rounded,
               color: Colors.black,
             ),
-            label: const Text('Download'),
+            label: Text(
+              'Download',
+              style: GoogleFonts.nunito(
+                color: Colors.black,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: goldAccent,
               foregroundColor: Colors.black,
@@ -1331,17 +1706,15 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
                 vertical: 14,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
           const SizedBox(width: 10),
           PopupMenuButton<String>(
             tooltip: 'More options',
-            icon: const Icon(
-              Icons.more_vert_rounded,
-              color: darkGreen,
-            ),
+            color: darkSurface2,
+            iconColor: lightText,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
@@ -1352,36 +1725,21 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
                 _showActionMessage(value);
               }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
+            itemBuilder: (context) => [
+              _darkPopupItem(
                 value: 'Refresh',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh_rounded),
-                    SizedBox(width: 10),
-                    Text('Refresh'),
-                  ],
-                ),
+                icon: Icons.refresh_rounded,
+                label: 'Refresh',
               ),
-              PopupMenuItem(
+              _darkPopupItem(
                 value: 'Print',
-                child: Row(
-                  children: [
-                    Icon(Icons.print_rounded),
-                    SizedBox(width: 10),
-                    Text('Print'),
-                  ],
-                ),
+                icon: Icons.print_rounded,
+                label: 'Print',
               ),
-              PopupMenuItem(
+              _darkPopupItem(
                 value: 'Settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings_rounded),
-                    SizedBox(width: 10),
-                    Text('Settings'),
-                  ],
-                ),
+                icon: Icons.settings_rounded,
+                label: 'Settings',
               ),
             ],
           ),
@@ -1390,18 +1748,44 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     );
   }
 
-  Widget _disclaimerBanner() {
+  PopupMenuItem<String> _darkPopupItem({
+    required String value,
+    required IconData icon,
+    required String label,
+  }) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: accentGreen,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: GoogleFonts.nunito(
+              color: lightText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _disclaimerBanner(LayoutProvider layout) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
+      padding: EdgeInsets.symmetric(
+        horizontal: layout.isMobile ? 12 : 16,
+        vertical: layout.isMobile ? 12 : 14,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
+        color: goldAccent.withOpacity(0.10),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: goldAccent.withValues(alpha: 0.35),
+          color: goldAccent.withOpacity(0.30),
         ),
       ),
       child: Row(
@@ -1409,16 +1793,19 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
         children: [
           const Icon(
             Icons.info_outline_rounded,
-            color: Color(0xFF946200),
+            color: goldAccent,
             size: 22,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Disclaimer: The crop data presented in this dashboard were gathered through laboratory testing and field sample analysis. Values should be interpreted as laboratory-derived measurements and may require further validation before use in official reporting, decision-making, or publication.',
+              maxLines: layout.isMobile ? 4 : null,
+              overflow:
+                  layout.isMobile ? TextOverflow.ellipsis : TextOverflow.visible,
               style: GoogleFonts.nunito(
-                color: const Color(0xFF5D4037),
-                fontSize: 13.5,
+                color: lightText,
+                fontSize: layout.isMobile ? 12 : 13.5,
                 fontWeight: FontWeight.w700,
                 height: 1.45,
               ),
@@ -1429,30 +1816,38 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     );
   }
 
-  Widget _cropBioLogo() {
+  Widget _cropBioLogo(LayoutProvider layout) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(layout.isMobile ? 14 : 16),
       decoration: BoxDecoration(
-        color: primaryGreen.withValues(alpha: 0.08),
+        color: darkSurface2,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: primaryGreen.withValues(alpha: 0.18),
+          color: primaryGreen.withOpacity(0.35),
         ),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.25),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            height: 52,
-            width: 52,
+            height: layout.isMobile ? 50 : 58,
+            width: layout.isMobile ? 50 : 58,
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   blurRadius: 12,
                   offset: const Offset(0, 6),
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: Colors.black.withOpacity(0.18),
                 ),
               ],
             ),
@@ -1468,14 +1863,18 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
               children: [
                 Text(
                   'CropBio',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
-                    fontSize: 20,
+                    fontSize: layout.isMobile ? 19 : 21,
                     fontWeight: FontWeight.w900,
-                    color: darkText,
+                    color: lightText,
                   ),
                 ),
                 Text(
                   'Data Dashboard',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -1490,105 +1889,31 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     );
   }
 
-  Widget _tableContainer() {
+  Widget _tableContainer(LayoutProvider layout) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      height: double.infinity,
+      padding: EdgeInsets.all(layout.isMobile ? 12 : 24),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24),
+        color: darkSurface,
+        borderRadius: BorderRadius.circular(layout.isMobile ? 18 : 24),
         border: Border.all(
-          color: borderGreen,
+          color: darkBorder,
         ),
         boxShadow: [
           BoxShadow(
-            blurRadius: 20,
+            blurRadius: 24,
             offset: const Offset(0, 10),
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.28),
           ),
         ],
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Text(
-                "Crop Records",
-                style: GoogleFonts.nunito(
-                  color: darkText,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: primaryGreen.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: primaryGreen.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Text(
-                  '${_tableRecords.length} records',
-                  style: GoogleFonts.nunito(
-                    color: primaryGreen,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: 320,
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _search,
-                  decoration: InputDecoration(
-                    hintText: "Search any field...",
-                    hintStyle: GoogleFonts.nunito(
-                      color: mutedText,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: primaryGreen,
-                    ),
-                    filled: true,
-                    fillColor: softBg,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(
-                        color: borderGreen,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(
-                        color: primaryGreen,
-                        width: 1.4,
-                      ),
-                    ),
-                  ),
-                  style: GoogleFonts.nunito(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  cursorColor: primaryGreen,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _disclaimerBanner(),
-          const SizedBox(height: 22),
+          _tableHeader(layout),
+          SizedBox(height: layout.isMobile ? 12 : 14),
+          _disclaimerBanner(layout),
+          SizedBox(height: layout.isMobile ? 14 : 22),
           Expanded(
             child: _loading
                 ? const Center(
@@ -1597,10 +1922,133 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
                     ),
                   )
                 : _tableRecords.isEmpty
-                    ? _emptyState()
-                    : _dataGrid(),
+                    ? _emptyState(layout)
+                    : _dataGrid(layout),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _tableHeader(LayoutProvider layout) {
+    if (layout.isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Crop Records",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.nunito(
+              color: lightText,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _countBadge('${_tableRecords.length} records'),
+              _countBadge('${_columns.length} columns'),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _searchField(layout),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            "Crop Records",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.nunito(
+              color: lightText,
+              fontWeight: FontWeight.w900,
+              fontSize: 24,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _countBadge('${_tableRecords.length} records'),
+        const SizedBox(width: 8),
+        _countBadge('${_columns.length} columns'),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 340,
+          child: _searchField(layout),
+        ),
+      ],
+    );
+  }
+
+  Widget _countBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: primaryGreen.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: primaryGreen.withOpacity(0.30),
+        ),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.nunito(
+          color: lightText,
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
+  Widget _searchField(LayoutProvider layout) {
+    return TextField(
+      controller: _searchController,
+      onChanged: _search,
+      style: GoogleFonts.nunito(
+        color: lightText,
+        fontWeight: FontWeight.w600,
+      ),
+      cursorColor: lightText,
+      decoration: InputDecoration(
+        hintText: "Search any field...",
+        hintStyle: GoogleFonts.nunito(
+          color: mutedText,
+          fontWeight: FontWeight.w600,
+        ),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          color: accentGreen,
+        ),
+        filled: true,
+        fillColor: darkSurface2,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: layout.isMobile ? 12 : 14,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(layout.isMobile ? 14 : 16),
+          borderSide: const BorderSide(
+            color: darkBorder,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(layout.isMobile ? 14 : 16),
+          borderSide: const BorderSide(
+            color: primaryGreen,
+            width: 1.5,
+          ),
+        ),
       ),
     );
   }
@@ -1608,83 +2056,239 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
   String _formatColumnName(String column) {
     if (column == '#') return '#';
 
-    return column.replaceAll('_', ' ');
+    const displayNames = {
+      '_id': 'ID',
+      'CODE': 'Code',
+      'CROP_TYPE': 'Crop Type',
+      'FIELD': 'Field',
+      'PLOT': 'Plot',
+      'PLANT_SAMPLE': 'Plant Sample',
+      'FRESH_WEIGHT': 'Fresh Weight',
+      'DRY_WEIGHT': 'Dry Weight',
+      'Average_Leaf_Area': 'Average Leaf Area',
+      'Corrected_Leaf_Area_(CF=0.75)': 'Corrected Leaf Area (CF=0.75)',
+      'SPAD__values': 'SPAD Values',
+      'Chloropyll__Value_(mg/m2)': 'Chlorophyll Value (mg/m²)',
+      'chl-a': 'Chl-a',
+      'chl-b': 'Chl-b',
+      'carotenoid': 'Carotenoid',
+      'Leaf_Dry_Matter_Content_(LDMC)': 'Leaf Dry Matter Content (LDMC)',
+      'Leaf_Water_Concentration': 'Leaf Water Concentration',
+      'Equivalent_Water_Thickness_(EWT)': 'Equivalent Water Thickness (EWT)',
+      'Specific_Leaf_Area_(cm2/g)': 'Specific Leaf Area (cm²/g)',
+      'Cap_Cover': 'Canopy Cover',
+      'LAI': 'LAI',
+      'DIFN': 'DIFN',
+      'MTA': 'MTA',
+      'SEM': 'SEM',
+      'SMP': 'SMP',
+      'SEL': 'SEL',
+      'Plant_Height': 'Plant Height',
+      'Length': 'Length',
+      'Width': 'Width',
+      'Plant': 'Plant Spacing',
+      'Row': 'Row Spacing',
+      'Type': 'Soil Type',
+      'Moisture': 'Soil Moisture',
+      'Temperature': 'Soil Temperature',
+      'year': 'Year',
+      'season': 'Season',
+      'source_collection': 'Source Collection',
+    };
+
+    if (displayNames.containsKey(column)) {
+      return displayNames[column]!;
+    }
+
+    return column
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
-  Widget _dataGrid() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: ScrollConfiguration(
-        behavior: const ScrollBehavior().copyWith(scrollbars: false),
-        child: ScrollbarTheme(
-          data: ScrollbarThemeData(
-            thumbColor: WidgetStateProperty.all(darkGreen),
-            thickness: WidgetStateProperty.all(8),
-            radius: const Radius.circular(4),
-          ),
-          child: SfDataGrid(
-            source: _dataSource,
-            controller: _controller,
-            editingGestureType: EditingGestureType.tap,
-            allowSorting: true,
-            allowFiltering: true,
-            allowMultiColumnSorting: true,
-            allowColumnsResizing: true,
-            showVerticalScrollbar: true,
-            showHorizontalScrollbar: true,
-            allowEditing: false,
-            selectionMode: SelectionMode.single,
-            navigationMode: GridNavigationMode.cell,
-            isScrollbarAlwaysShown: true,
-            columnWidthMode: ColumnWidthMode.auto,
-            columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
-            gridLinesVisibility: GridLinesVisibility.both,
-            headerGridLinesVisibility: GridLinesVisibility.both,
-            columns: _columns.map((column) {
-              return GridColumn(
-                columnName: column,
-                width: column == '#' ? 70 : 180,
-                label: _header(_formatColumnName(column)),
-              );
-            }).toList(),
+  double _columnWidth(String column, bool isMobile) {
+    if (column == '#') return 70;
+
+    final title = _formatColumnName(column);
+    final lowerTitle = title.toLowerCase();
+    final int length = title.length;
+
+    final double baseWidth = isMobile ? 145 : 165;
+    final double widthFromText = length * (isMobile ? 7.4 : 7.9);
+    final double computedWidth = widthFromText + 48;
+
+    if (lowerTitle.contains('source collection')) {
+      return isMobile ? 220 : 250;
+    }
+
+    if (lowerTitle.contains('corrected leaf area')) {
+      return isMobile ? 240 : 270;
+    }
+
+    if (lowerTitle.contains('specific leaf area')) {
+      return isMobile ? 230 : 260;
+    }
+
+    if (lowerTitle.contains('equivalent water thickness')) {
+      return isMobile ? 255 : 285;
+    }
+
+    if (lowerTitle.contains('leaf dry matter')) {
+      return isMobile ? 250 : 280;
+    }
+
+    if (lowerTitle.contains('leaf water concentration')) {
+      return isMobile ? 245 : 275;
+    }
+
+    if (lowerTitle.contains('chlorophyll value')) {
+      return isMobile ? 225 : 255;
+    }
+
+    if (lowerTitle.contains('average leaf area')) {
+      return isMobile ? 205 : 230;
+    }
+
+    if (lowerTitle.contains('soil temperature')) {
+      return isMobile ? 195 : 220;
+    }
+
+    if (lowerTitle.contains('soil moisture')) {
+      return isMobile ? 190 : 215;
+    }
+
+    if (lowerTitle.contains('plant height')) {
+      return isMobile ? 180 : 205;
+    }
+
+    if (lowerTitle.contains('plant spacing') ||
+        lowerTitle.contains('row spacing')) {
+      return isMobile ? 185 : 210;
+    }
+
+    return computedWidth.clamp(baseWidth, isMobile ? 250 : 290);
+  }
+
+  Widget _dataGrid(LayoutProvider layout) {
+    return ScrollbarTheme(
+      data: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.all(accentGreen),
+        trackColor: WidgetStateProperty.all(darkSurface2),
+        trackBorderColor: WidgetStateProperty.all(darkBorder),
+        thickness: WidgetStateProperty.all(8),
+        radius: const Radius.circular(999),
+      ),
+      child: Scrollbar(
+        controller: _verticalGridScrollController,
+        thumbVisibility: true,
+        trackVisibility: true,
+        notificationPredicate: (notification) {
+          return notification.metrics.axis == Axis.vertical;
+        },
+        child: Scrollbar(
+          controller: _horizontalGridScrollController,
+          thumbVisibility: true,
+          trackVisibility: true,
+          notificationPredicate: (notification) {
+            return notification.metrics.axis == Axis.horizontal;
+          },
+          child: Padding(
+            padding: const EdgeInsets.only(
+              right: 14,
+              bottom: 14,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: darkSurface2,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: darkBorder,
+                  ),
+                ),
+                child: SfDataGrid(
+                  source: _dataSource,
+                  controller: _controller,
+                  verticalScrollController: _verticalGridScrollController,
+                  horizontalScrollController: _horizontalGridScrollController,
+                  editingGestureType: EditingGestureType.tap,
+                  allowSorting: true,
+                  allowFiltering: true,
+                  allowMultiColumnSorting: true,
+                  allowColumnsResizing: true,
+                  allowEditing: false,
+                  selectionMode: SelectionMode.single,
+                  navigationMode: GridNavigationMode.cell,
+                  showVerticalScrollbar: false,
+                  showHorizontalScrollbar: false,
+                  columnWidthMode: ColumnWidthMode.none,
+                  headerRowHeight: layout.isMobile ? 72 : 78,
+                  rowHeight: layout.isMobile ? 54 : 52,
+                  gridLinesVisibility: GridLinesVisibility.both,
+                  headerGridLinesVisibility: GridLinesVisibility.both,
+                  columns: _columns.map((column) {
+                    return GridColumn(
+                      columnName: column,
+                      width: _columnWidth(column, layout.isMobile),
+                      label: _header(
+                        _formatColumnName(column),
+                        isMobile: layout.isMobile,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _header(String title) {
+  Widget _header(
+    String title, {
+    required bool isMobile,
+  }) {
     return Container(
       alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 10 : 12,
+        vertical: isMobile ? 8 : 10,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            darkGreen,
-            mediumGreen,
+            darkSurface3,
+            primaryGreen,
           ],
         ),
       ),
       child: Text(
         title,
+        softWrap: true,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
         style: GoogleFonts.nunito(
           color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 14,
+          fontWeight: FontWeight.w900,
+          fontSize: isMobile ? 11.5 : 13,
+          height: 1.12,
         ),
       ),
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(LayoutProvider layout) {
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(28),
+        padding: EdgeInsets.all(layout.isMobile ? 20 : 28),
         decoration: BoxDecoration(
-          color: softBg,
+          color: darkSurface2,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: borderGreen,
+            color: darkBorder,
           ),
         ),
         child: Column(
@@ -1692,23 +2296,26 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
           children: [
             Icon(
               Icons.inbox_rounded,
-              size: 64,
-              color: primaryGreen.withValues(alpha: 0.35),
+              size: layout.isMobile ? 54 : 64,
+              color: accentGreen.withOpacity(0.55),
             ),
             const SizedBox(height: 14),
             Text(
               'No records found',
+              textAlign: TextAlign.center,
               style: GoogleFonts.nunito(
-                fontSize: 18,
+                fontSize: layout.isMobile ? 16 : 18,
                 fontWeight: FontWeight.w800,
-                color: darkText,
+                color: lightText,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               'There are no crop records available for $_selectedFilterLabel.',
+              textAlign: TextAlign.center,
               style: GoogleFonts.nunito(
                 color: mutedText,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -1721,13 +2328,16 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 class DynamicCropDataSource extends DataGridSource {
   final List<String> columns;
   final Map<String, List<String>> columnAliases;
+  final bool isMobile;
+
   late final List<DataGridRow> _rows;
 
   DynamicCropDataSource(
     List<Map<String, dynamic>> records,
     this.columns,
-    this.columnAliases,
-  ) {
+    this.columnAliases, {
+    required this.isMobile,
+  }) {
     final totalRows = records.length;
 
     _rows = records.asMap().entries.map((entry) {
@@ -1780,22 +2390,31 @@ class DynamicCropDataSource extends DataGridSource {
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
     return DataGridRowAdapter(
-      color: Colors.white,
+      color: const Color(0xFF162216),
       cells: row.getCells().map((cell) {
         return Container(
           alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 10 : 12,
+            vertical: isMobile ? 8 : 10,
+          ),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Color(0xFF2E3E31),
+                width: 0.6,
+              ),
+            ),
           ),
           child: Text(
             cell.value?.toString() ?? '',
-            maxLines: 1,
+            maxLines: isMobile ? 2 : 1,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.nunito(
-              fontSize: 13,
+              fontSize: isMobile ? 11.5 : 12.5,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF243024),
+              color: Color(0xFFF3F7F1),
+              height: 1.18,
             ),
           ),
         );

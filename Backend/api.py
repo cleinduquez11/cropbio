@@ -1,6 +1,7 @@
 import math
 import os
-from flask import Flask, jsonify, request, send_from_directory, abort
+from flask import Flask, jsonify, request, send_from_directory, abort, g
+
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import json
@@ -15,6 +16,9 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from itsdangerous import URLSafeTimedSerializer
+
+import logging
+import time
 
 # Token generator
 serializer = URLSafeTimedSerializer("SECRET_KEY_123")
@@ -107,6 +111,67 @@ for cols in COLLECTIONS:
 
 #     <------------- Initialize the API --------->
 app = Flask(__name__, static_folder="static")
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------
+# Log every request
+# ---------------------------------------
+@app.before_request
+def before_request():
+    g.start_time = time.perf_counter()
+
+    logger.info(
+        "REQUEST | %s %s | IP=%s | UA=%s",
+        request.method,
+        request.url,
+        request.remote_addr,
+        request.user_agent.string
+    )
+
+    # Optional: log headers
+    logger.info("HEADERS | %s", dict(request.headers))
+
+    # Optional: log JSON body
+    if request.is_json:
+        logger.info("BODY | %s", request.get_json(silent=True))
+
+    # Optional: log form data
+    elif request.form:
+        logger.info("FORM | %s", request.form.to_dict())
+
+    # Optional: log query parameters
+    if request.args:
+        logger.info("QUERY | %s", request.args.to_dict())
+
+
+# ---------------------------------------
+# Log every response
+# ---------------------------------------
+@app.after_request
+def after_request(response):
+    elapsed = (time.perf_counter() - g.start_time) * 1000
+
+    logger.info(
+        "RESPONSE | %s %s | %s | %.2f ms",
+        request.method,
+        request.path,
+        response.status,
+        elapsed
+    )
+
+    logger.info("-" * 100)
+
+    return response
+
+
+# ---------------------------------------
+# Log uncaught exceptions
+# ---------------------------------------
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.exception("Unhandled Exception")
+    return {"error": "Internal Server Error"}, 500
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # CORS(
@@ -934,7 +999,7 @@ def verify_email(token):
 
         <div class="logo-box">
 
-            <img src="https://coaster.mmsu.edu.ph/api/static/Cropbio_Logo_Dark.svg"
+            <img src="https://coaster.mmsu.edu.ph/python/static/Cropbio_Logo_Dark.svg"
                  alt="CropBio Logo"
                  height="60">
 
@@ -953,7 +1018,7 @@ def verify_email(token):
             You can now log in and start using the CropBio system.
         </div>
 
-        <a href="http://localhost:3000/signin"
+        <a href="http://coaster.mmsu.edu.ph/cropbio/#/signin"
            class="login-btn">
            Go to Login
         </a>

@@ -56,8 +56,9 @@ class _SignInPageState extends State<SignInPage> {
       /// =========================
 
       if (user != null) {
-        /// SAVE USER SESSION
-        await UserSession.saveUser(user);
+ await UserSession.saveUser(user);
+        if (user.role == "admin") {
+                 
 
         CustomSnackBar.show(
           context,
@@ -67,16 +68,36 @@ class _SignInPageState extends State<SignInPage> {
           bottomMargin: 40,
           leftMarginFactor: 0.8,
         );
+                        Navigator.pushReplacementNamed(
+          context,
+          "/dashboard",
+        );
+        } else {
+          
+
+        CustomSnackBar.show(
+          context,
+          message: "Login successful",
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+          bottomMargin: 40,
+          leftMarginFactor: 0.8,
+        );
+                        Navigator.pushReplacementNamed(
+          context,
+          "/landingpage",
+        );
+          
+        }
+        /// SAVE USER SESSION
+
 
         /// Navigate to dashboard
         // Navigator.pushReplacementNamed(
         //   context,
         //   "/landingpage",
         // );
-                Navigator.pushReplacementNamed(
-          context,
-          "/dashboard",
-        );
+
       }
 
       /// =========================
