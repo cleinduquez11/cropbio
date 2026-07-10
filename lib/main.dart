@@ -6,6 +6,7 @@ import 'package:cropbio/CropBioServices.dart';
 import 'package:cropbio/CropBioSignin.dart';
 import 'package:cropbio/CropBioSignup.dart';
 import 'package:cropbio/CropBioUpdates.dart';
+import 'package:cropbio/CropbioProject.dart';
 import 'package:cropbio/LandingPage.dart';
 import 'package:cropbio/Pherips/RouteDirection.dart';
 import 'package:cropbio/Pherips/themes.dart';
@@ -57,6 +58,9 @@ class CropBiodiversityApp extends StatelessWidget {
         switch (settings.name) {
           case "/landingpage":
             page = const LandingPagetest();
+            break;
+          case "/projectpage":
+            page = const ProjectPage();
             break;
           case "/dashboard":
             page = const Cropbiodashboard();

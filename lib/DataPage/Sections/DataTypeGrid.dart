@@ -15,16 +15,16 @@ class DataTypeGrid extends StatelessWidget {
         type: "tabular",
       ),
       DataType(
-        title: "Shapefiles",
-        description: "Field boundaries, plots, and spatial vectors.",
-        icon: Icons.map,
-        type: "shapefile",
+        title: "Raw Data",
+        description: "Crop samples, LAI, ASD, Chlorophyll and laboratoy results",
+        icon: Icons.nature,
+        type: "raw",
       ),
       DataType(
-        title: "Raster Data",
-        description: "Satellite layers, NDVI, and environmental grids.",
+        title: "Map layers",
+        description: "Satellite layers, Vector layers, NDVI, and environmental grids.",
         icon: Icons.layers,
-        type: "raster",
+        type: "maplayers",
       ),
       DataType(
         title: "Orthomosaic",

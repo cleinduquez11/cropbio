@@ -11,6 +11,7 @@ import 'package:cropbio/Pherips/Footer.dart';
 import 'package:cropbio/Pherips/LandingCarouselVid.dart';
 import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class LandingPagetest extends StatelessWidget {
@@ -52,7 +53,7 @@ class LandingPagetest extends StatelessWidget {
           /// ================= UPDATES SECTION =================
           SliverToBoxAdapter(
             child: RepaintBoundary(
-              child:  UpdatesSection(),
+              child: UpdatesSection(),
             ),
           ),
 
@@ -103,24 +104,27 @@ class LandingPagetest extends StatelessWidget {
                   constraints: BoxConstraints(
                     maxWidth: layout.contentWidth + 10,
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Research Focus Areas",
-                        style: TextStyle(
+                        style: GoogleFonts.nunito(
                           fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF3F6B2A),
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF3F6B2A),
+                          height: 1.12,
+                          letterSpacing: -0.4,
                         ),
                       ),
-                      SizedBox(height: 14),
+                      const SizedBox(height: 14),
                       Text(
                         "Exploring sustainable agricultural innovation through biodiversity, resilience, and conservation research.",
-                        style: TextStyle(
+                        style: GoogleFonts.nunito(
                           fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           height: 1.7,
-                          color: Colors.black54,
+                          color: const Color(0xFF60705A),
                         ),
                       ),
                       SizedBox(height: 40),
@@ -188,4 +192,3 @@ class LandingPagetest extends StatelessWidget {
     );
   }
 }
-

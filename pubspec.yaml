@@ -78,6 +78,7 @@ flutter:
     - lib/Assets/
     - lib/Assets/Agency_Logos/
     - lib/Assets/Sample_Files/Sampless/
+    - lib/Assets/cropbio_project/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

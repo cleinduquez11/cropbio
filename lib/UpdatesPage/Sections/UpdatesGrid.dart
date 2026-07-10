@@ -1,3 +1,4 @@
+import 'package:cropbio/CropBioUpdates.dart';
 import 'package:cropbio/UpdatesPage/Widgets/UpdatesPost.dart';
 import 'package:flutter/material.dart';
 
@@ -57,7 +58,7 @@ class UpdatesGrid extends StatelessWidget {
             childAspectRatio: 1.2,
           ),
           itemBuilder: (_, i) {
-            return UpdatesCard(post: filtered[i]);
+            return HoverAnimatedCard(child: UpdatesCard(post: filtered[i]));
           },
         );
       },

@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:cropbio/Models/UserModel.dart';
 import 'package:cropbio/Pherips/RouteDirection.dart';
+import 'package:cropbio/Providers/LayoutProvider.dart';
 import 'package:cropbio/Providers/UserSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../Providers/LayoutProvider.dart';
 
 class ResponsiveTitleBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -25,22 +27,29 @@ class ResponsiveTitleBar extends StatefulWidget implements PreferredSizeWidget {
   State<ResponsiveTitleBar> createState() => _ResponsiveTitleBarState();
 
   @override
-  // TODO: implement preferredSize
-  Size get preferredSize => throw UnimplementedError();
+  Size get preferredSize => const Size.fromHeight(88);
 }
 
 class _ResponsiveTitleBarState extends State<ResponsiveTitleBar> {
   AppUser? user;
   bool isLoading = true;
+
   final GlobalKey signInKey = GlobalKey();
   final GlobalKey signUpKey = GlobalKey();
-  // final GlobalKey signOutKey = GlobalKey();
-  final GlobalKey avatarKey = GlobalKey();
-//       final Map<String, GlobalKey> signOutMenuKey = {
-//   "Profile": GlobalKey(),
-//   "Settings": GlobalKey(),
-//   "SignOut": GlobalKey(),
-// };
+
+  static const Color primaryGreen = Color(0xFF3F6B2A);
+  static const Color accentGreen = Color(0xFF7A8F3D);
+  static const Color goldAccent = Color(0xFFC6A432);
+
+  static const Color darkBg = Color(0xFF0F1712);
+  static const Color darkSurface = Color(0xFF111C14);
+  static const Color darkSurface2 = Color(0xFF162216);
+  static const Color darkSurface3 = Color(0xFF1D2B20);
+  static const Color darkBorder = Color(0xFF2E3E31);
+
+  static const Color lightText = Color(0xFFF3F7F1);
+  static const Color mutedText = Color(0xFFB7C4B2);
+
   @override
   void initState() {
     super.initState();
@@ -58,327 +67,573 @@ class _ResponsiveTitleBarState extends State<ResponsiveTitleBar> {
     });
   }
 
+  void _navigateFromKey({
+    required BuildContext context,
+    required GlobalKey key,
+    required String route,
+  }) {
+    final keyContext = key.currentContext;
+
+    if (keyContext == null) {
+      Navigator.pushNamed(context, route);
+      return;
+    }
+
+    final renderObject = keyContext.findRenderObject();
+
+    if (renderObject is! RenderBox) {
+      Navigator.pushNamed(context, route);
+      return;
+    }
+
+    final position = renderObject.localToGlobal(Offset.zero);
+    final screenSize = MediaQuery.of(context).size;
+
+    final direction = RouteTransitionHelper.getDirectionFromPosition(
+      position,
+      screenSize,
+    );
+
+    Navigator.pushNamed(
+      context,
+      route,
+      arguments: direction,
+    );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    await UserSession.clearUser();
+
+    if (!context.mounted) return;
+
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      "/landingpage",
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final layout = context.watch<LayoutProvider>();
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    // double barHeight = layout.isMobile
-    //     ? 60
-    //     : layout.isTablet
-    //         ? 70
-    //         : layout.isDesktop
-    //             ? 90
-    //             : 100;
 
     return Container(
-      color: Color(0xFF1E1E1E),
-      // color: colors.primary, // dark blue background
       height: layout.appBarHeight,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF0F1712),
+            Color(0xFF111C14),
+            Color(0xFF162216),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: darkBorder,
+            width: 1,
+          ),
+        ),
+      ),
       child: Center(
-        child: Container(
-          width: layout.contentWidth + 200,
-          margin: EdgeInsets.symmetric(horizontal: layout.outerMargin),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              /// LEFT — LOGO
-              Hero(
-                tag: "logo",
-                child: SizedBox(
-                  height: layout.logoHeight,
-                  width: layout.logoWidth,
-                  child: SvgPicture.asset(
-                    "lib/Assets/Cropbio_Logo_par.svg",
-                    fit: BoxFit.fitWidth,
-                  ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: layout.contentWidth > 1280 ? 1280 : layout.contentWidth,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: layout.isMobile ? 14 : layout.outerMargin,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _LogoTitle(
+                  title: widget.title,
+                  logoHeight: layout.logoHeight,
+                  logoWidth: layout.logoWidth,
+                  isMobile: layout.isMobile,
                 ),
-              ),
 
-              /// Push everything else to the right
-              const Spacer(),
+                const Spacer(),
 
-              const SizedBox(width: 20),
-              _PHTimeWidget(),
-
-              const SizedBox(width: 20),
-
-              /// RIGHT — ACTION BUTTONS
-              Row(
-                children: [
-                  // _LanguageButton(
-                  //   isLarge: layout.isLargeDesktop,
-                  //   onPressed: onLanguagePressed,
-                  // ),
-                  // const SizedBox(width: 8),
-                  // _ThemeToggleButton(
-                  //   isLarge: layout.isLargeDesktop,
-                  //   onPressed: onToggleTheme,
-                  // ),
-                  // const SizedBox(width: 8),
-                  // _SearchButton(
-                  //   isLarge: layout.isLargeDesktop,
-                  //   onPressed: widget.onSearch,
-                  // ),
-                  if (!layout.isMobile) ...[
-                    const SizedBox(width: 12),
-
-                    /// ================= LOGGED IN =================
-                    if (user != null) ...[
-                      Row(
-                        children: [
-                          PopupMenuButton<String>(
-                            offset: const Offset(0, 45),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-
-                            onSelected: (value) async {
-                              switch (value) {
-                                case "profile":
-                                  print("Profile clicked");
-                                  break;
-
-                                case "settings":
-                                  if (!mounted) return;
-                                  Navigator.pushNamed(context, "/settings");
-                                  break;
-
-                                case "logout":
-                                  await UserSession.clearUser();
-
-                                  // if (!mounted) return;
-
-                                  Future.microtask(() {
-                                    if (!context.mounted) return;
-
-                                    Navigator.of(context)
-                                        .pushNamedAndRemoveUntil(
-                                      "/landingpage",
-                                      (route) => false,
-                                    );
-                                  });
-                                  break;
-                              }
-                            },
-
-                            itemBuilder: (context) => [
-                              /// 👤 USER NAME (NOT CLICKABLE)
-                              PopupMenuItem<String>(
-                                enabled: false,
-                                child: Text(
-                                  user!.fullName,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-
-                              const PopupMenuDivider(),
-
-                              /// ⚙ SETTINGS
-                              const PopupMenuItem(
-                                value: "settings",
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.settings_outlined),
-                                    SizedBox(width: 10),
-                                    Text("Settings"),
-                                  ],
-                                ),
-                              ),
-
-                              /// 🚪 LOGOUT
-                              const PopupMenuItem(
-                                value: "logout",
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.logout),
-                                    SizedBox(width: 10),
-                                    Text("Logout"),
-                                  ],
-                                ),
-                              ),
-                            ],
-
-                            /// Avatar Trigger
-                            child: CircleAvatar(
-                              key: avatarKey,
-                              radius: 18,
-                              backgroundColor: user!.role == "user"
-                                  ? const Color(0xFF3F6B2A)
-                                  : user!.role == "researcher"
-                                      ? Colors.blueAccent
-                                      : Colors.red,
-                              child: Text(
-                                user!.fullName.isNotEmpty
-                                    ? user!.fullName[0].toUpperCase()
-                                    : "?",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    ]
-
-                    /// ================= NOT LOGGED IN =================
-                    else ...[
-                      _AuthButton(
-                        key: signInKey,
-                        label: "Sign In",
-                        isPrimary: false,
-                        isLarge: layout.isLargeDesktop,
-                        onPressed: () {
-                          final RenderBox box = signInKey.currentContext!
-                              .findRenderObject() as RenderBox;
-
-                          final position = box.localToGlobal(Offset.zero);
-
-                          final screenSize = MediaQuery.of(context).size;
-
-                          final direction =
-                              RouteTransitionHelper.getDirectionFromPosition(
-                            position,
-                            screenSize,
-                          );
-
-                          Navigator.pushNamed(
-                            context,
-                            "/signin",
-                            arguments: direction,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _AuthButton(
-                        key: signUpKey,
-                        label: "Sign Up",
-                        isPrimary: true,
-                        isLarge: layout.isLargeDesktop,
-                        onPressed: () {
-                          final RenderBox box = signUpKey.currentContext!
-                              .findRenderObject() as RenderBox;
-
-                          final position = box.localToGlobal(Offset.zero);
-
-                          final screenSize = MediaQuery.of(context).size;
-
-                          final direction =
-                              RouteTransitionHelper.getDirectionFromPosition(
-                            position,
-                            screenSize,
-                          );
-                          Navigator.pushNamed(context, "/signup",
-                              arguments: direction);
-                        },
-                      ),
-                    ]
-                  ]
+                if (!layout.isMobile) ...[
+                  const _PHTimeWidget(),
+                  const SizedBox(width: 14),
                 ],
-              ),
-            ],
+
+                if (!layout.isMobile) ...[
+                  if (widget.onLanguagePressed != null)
+                    _CircleIconButton(
+                      tooltip: "Language",
+                      icon: Icons.language_rounded,
+                      onPressed: widget.onLanguagePressed!,
+                    ),
+                  if (widget.onToggleTheme != null) ...[
+                    const SizedBox(width: 8),
+                    _CircleIconButton(
+                      tooltip: "Toggle theme",
+                      icon: Icons.dark_mode_rounded,
+                      onPressed: widget.onToggleTheme!,
+                    ),
+                  ],
+                  if (widget.onSearch != null) ...[
+                    const SizedBox(width: 8),
+                    _CircleIconButton(
+                      tooltip: "Search",
+                      icon: Icons.search_rounded,
+                      onPressed: widget.onSearch!,
+                    ),
+                  ],
+                  const SizedBox(width: 12),
+                  _authArea(layout),
+                ],
+
+                if (layout.isMobile)
+                  _CircleIconButton(
+                    tooltip: "Search",
+                    icon: Icons.search_rounded,
+                    onPressed: widget.onSearch ?? () {},
+                  ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  @override
-  Size get preferredSize => const Size.fromHeight(85);
+  Widget _authArea(LayoutProvider layout) {
+    if (isLoading) {
+      return const SizedBox(
+        height: 36,
+        width: 36,
+        child: Padding(
+          padding: EdgeInsets.all(8),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: goldAccent,
+          ),
+        ),
+      );
+    }
+
+    if (user != null) {
+      return _UserMenu(
+        user: user!,
+        onSettings: () {
+          Navigator.pushNamed(context, "/settings");
+        },
+        onLogout: () => _logout(context),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _AuthButton(
+          key: signInKey,
+          label: "Sign In",
+          isPrimary: false,
+          isLarge: layout.isLargeDesktop,
+          onPressed: () {
+            _navigateFromKey(
+              context: context,
+              key: signInKey,
+              route: "/signin",
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        _AuthButton(
+          key: signUpKey,
+          label: "Sign Up",
+          isPrimary: true,
+          isLarge: layout.isLargeDesktop,
+          onPressed: () {
+            _navigateFromKey(
+              context: context,
+              key: signUpKey,
+              route: "/signup",
+            );
+          },
+        ),
+      ],
+    );
+  }
 }
 
-/* ================= LANGUAGE BUTTON ================= */
+class _LogoTitle extends StatefulWidget {
+  final String title;
+  final double logoHeight;
+  final double logoWidth;
+  final bool isMobile;
 
-class _LanguageButton extends StatelessWidget {
-  final bool isLarge;
-  final VoidCallback? onPressed;
-
-  const _LanguageButton({
-    required this.isLarge,
-    this.onPressed,
+  const _LogoTitle({
+    required this.title,
+    required this.logoHeight,
+    required this.logoWidth,
+    required this.isMobile,
   });
 
   @override
+  State<_LogoTitle> createState() => _LogoTitleState();
+}
+
+class _LogoTitleState extends State<_LogoTitle> {
+  bool isHovered = false;
+
+  static const Color goldAccent = Color(0xFFC6A432);
+  static const Color lightText = Color(0xFFF3F7F1);
+  static const Color mutedText = Color(0xFFB7C4B2);
+
+  @override
   Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(Icons.language, color: Colors.white),
-      label: isLarge
-          ? const Text(
-              "EN",
-              style: TextStyle(color: Colors.white),
-            )
-          : const SizedBox.shrink(),
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
+    return MouseRegion(
+      cursor: SystemMouseCursors.basic,
+      onEnter: (_) {
+        setState(() {
+          isHovered = true;
+        });
+      },
+      onExit: (_) {
+        setState(() {
+          isHovered = false;
+        });
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Hero(
+            tag: "logo",
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(
+                0,
+                isHovered ? -3 : 0,
+                0,
+              ),
+              child: AnimatedScale(
+                scale: isHovered ? 1.035 : 1.0,
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                child: SizedBox(
+                  height: widget.logoHeight,
+                  width: widget.isMobile ? 150 : widget.logoWidth,
+                  child: SvgPicture.asset(
+                    "lib/Assets/Cropbio_LOGO_par.svg",
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ),
+if (!widget.isMobile) ...[
+  const SizedBox(width: 14),
+  Container(
+    width: 1,
+    height: 34,
+    color: Colors.white.withOpacity(0.12),
+  ),
+  const SizedBox(width: 14),
+  Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        "MMSU",
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.nunito(
+          color: lightText,
+          fontSize: 19,
+          fontWeight: FontWeight.w900,
+          height: 1,
+          letterSpacing: 0.4,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        "Mariano Marcos State University",
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.nunito(
+          color: isHovered ? goldAccent : mutedText,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.2,
+        ),
+      ),
+    ],
+  ),
+],
+       
+        ],
       ),
     );
   }
 }
 
-/* ================= DARK MODE BUTTON ================= */
+class _UserMenu extends StatelessWidget {
+  final AppUser user;
+  final VoidCallback onSettings;
+  final VoidCallback onLogout;
 
-class _ThemeToggleButton extends StatelessWidget {
-  final bool isLarge;
-  final VoidCallback? onPressed;
-
-  const _ThemeToggleButton({
-    required this.isLarge,
-    this.onPressed,
+  const _UserMenu({
+    required this.user,
+    required this.onSettings,
+    required this.onLogout,
   });
+
+  static const Color primaryGreen = Color(0xFF3F6B2A);
+  static const Color goldAccent = Color(0xFFC6A432);
+  static const Color darkSurface2 = Color(0xFF162216);
+  static const Color darkBorder = Color(0xFF2E3E31);
+  static const Color lightText = Color(0xFFF3F7F1);
+  static const Color mutedText = Color(0xFFB7C4B2);
+
+  Color get _roleColor {
+    switch (user.role.toLowerCase()) {
+      case "researcher":
+        return Colors.blueAccent;
+      case "admin":
+        return Colors.redAccent;
+      case "user":
+      default:
+        return primaryGreen;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: const Icon(
-        Icons.dark_mode,
-        color: Colors.white,
+    final initial = user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : "?";
+
+    return PopupMenuButton<String>(
+      tooltip: "Account",
+      offset: const Offset(0, 48),
+      color: Colors.white,
+      elevation: 12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-      tooltip: "Toggle Dark Mode",
+      onSelected: (value) {
+        switch (value) {
+          case "profile":
+            Navigator.pushNamed(context, "/profile");
+            break;
+          case "settings":
+            onSettings();
+            break;
+          case "logout":
+            onLogout();
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: SizedBox(
+            width: 220,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: _roleColor,
+                  child: Text(
+                    initial,
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    user.fullName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      color: const Color(0xFF162216),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: "profile",
+          child: _menuRow(
+            icon: Icons.person_outline_rounded,
+            label: "Profile",
+          ),
+        ),
+        PopupMenuItem(
+          value: "settings",
+          child: _menuRow(
+            icon: Icons.settings_outlined,
+            label: "Settings",
+          ),
+        ),
+        PopupMenuItem(
+          value: "logout",
+          child: _menuRow(
+            icon: Icons.logout_rounded,
+            label: "Logout",
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        decoration: BoxDecoration(
+          color: darkSurface2,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: darkBorder,
+          ),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: _roleColor,
+              child: Text(
+                initial,
+                style: GoogleFonts.nunito(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 120),
+              child: Text(
+                user.fullName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  color: lightText,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: goldAccent,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _menuRow({
+    required IconData icon,
+    required String label,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: const Color(0xFF3F6B2A),
+          size: 20,
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: GoogleFonts.nunito(
+            color: const Color(0xFF162216),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
 
-/* ================= SEARCH BUTTON ================= */
+class _CircleIconButton extends StatefulWidget {
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
 
-class _SearchButton extends StatelessWidget {
-  final bool isLarge;
-  final VoidCallback? onPressed;
-
-  const _SearchButton({
-    required this.isLarge,
-    this.onPressed,
+  const _CircleIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
   });
 
   @override
+  State<_CircleIconButton> createState() => _CircleIconButtonState();
+}
+
+class _CircleIconButtonState extends State<_CircleIconButton> {
+  bool isHovered = false;
+
+  static const Color goldAccent = Color(0xFFC6A432);
+  static const Color darkSurface2 = Color(0xFF162216);
+  static const Color darkSurface3 = Color(0xFF1D2B20);
+  static const Color darkBorder = Color(0xFF2E3E31);
+  static const Color lightText = Color(0xFFF3F7F1);
+
+  @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: const Icon(
-        Icons.search,
-        color: Colors.white,
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) {
+          setState(() {
+            isHovered = true;
+          });
+        },
+        onExit: (_) {
+          setState(() {
+            isHovered = false;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(
+            color: isHovered ? darkSurface3 : darkSurface2,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isHovered ? goldAccent.withOpacity(0.65) : darkBorder,
+            ),
+          ),
+          child: IconButton(
+            onPressed: widget.onPressed,
+            icon: Icon(
+              widget.icon,
+              color: isHovered ? goldAccent : lightText,
+              size: 20,
+            ),
+          ),
+        ),
       ),
-      tooltip: "Search",
     );
   }
 }
 
-// auth button
-class _AuthButton extends StatelessWidget {
+class _AuthButton extends StatefulWidget {
   final String label;
   final bool isPrimary;
   final bool isLarge;
   final VoidCallback onPressed;
 
   const _AuthButton({
-    super.key, // ✅ REQUIRED
+    super.key,
     required this.label,
     required this.isPrimary,
     required this.isLarge,
@@ -386,34 +641,70 @@ class _AuthButton extends StatelessWidget {
   });
 
   @override
+  State<_AuthButton> createState() => _AuthButtonState();
+}
+
+class _AuthButtonState extends State<_AuthButton> {
+  bool isHovered = false;
+
+  static const Color primaryGreen = Color(0xFF3F6B2A);
+  static const Color goldAccent = Color(0xFFC6A432);
+  static const Color darkSurface2 = Color(0xFF162216);
+  static const Color darkBorder = Color(0xFF2E3E31);
+  static const Color lightText = Color(0xFFF3F7F1);
+
+  @override
   Widget build(BuildContext context) {
     final layout = context.watch<LayoutProvider>();
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
 
-    return TextButton(
-      onPressed: onPressed,
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.symmetric(
-          horizontal: isLarge ? 18 : 14,
-          vertical: isLarge ? 10 : 8,
+    final bool filled = widget.isPrimary || isHovered;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) {
+        setState(() {
+          isHovered = true;
+        });
+      },
+      onExit: (_) {
+        setState(() {
+          isHovered = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(
+          0,
+          isHovered ? -3 : 0,
+          0,
         ),
-        foregroundColor: isPrimary ? colors.onPrimary : colors.onSecondary,
-        backgroundColor: isPrimary ? colors.primary : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: isPrimary
-              ? BorderSide.none
-              : BorderSide(
-                  color: colors.outline.withOpacity(0.4),
-                ),
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: layout.bodyFontSize,
-          fontWeight: isPrimary ? FontWeight.w600 : FontWeight.w500,
+        child: TextButton(
+          onPressed: widget.onPressed,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.isLarge ? 18 : 14,
+              vertical: widget.isLarge ? 11 : 9,
+            ),
+            foregroundColor: filled ? Colors.black : lightText,
+            backgroundColor: filled
+                ? (widget.isPrimary ? goldAccent : primaryGreen)
+                : darkSurface2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: filled ? Colors.transparent : darkBorder,
+              ),
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: GoogleFonts.nunito(
+              fontSize: layout.bodyFontSize,
+              fontWeight: FontWeight.w900,
+              color: filled ? Colors.black : lightText,
+            ),
+          ),
         ),
       ),
     );
@@ -421,7 +712,7 @@ class _AuthButton extends StatelessWidget {
 }
 
 class _PHTimeWidget extends StatefulWidget {
-  const _PHTimeWidget({super.key});
+  const _PHTimeWidget();
 
   @override
   State<_PHTimeWidget> createState() => _PHTimeWidgetState();
@@ -429,34 +720,44 @@ class _PHTimeWidget extends StatefulWidget {
 
 class _PHTimeWidgetState extends State<_PHTimeWidget> {
   late DateTime now;
+  Timer? timer;
+
+  static const Color goldAccent = Color(0xFFC6A432);
+  static const Color darkSurface2 = Color(0xFF162216);
+  static const Color darkBorder = Color(0xFF2E3E31);
+  static const Color lightText = Color(0xFFF3F7F1);
+  static const Color mutedText = Color(0xFFB7C4B2);
 
   @override
   void initState() {
     super.initState();
+
     now = DateTime.now();
 
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return false;
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
 
       setState(() {
         now = DateTime.now();
       });
-
-      return true;
     });
   }
 
-  String get formattedTime {
-    final phTime = now.toUtc().add(const Duration(hours: 8));
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
 
+  DateTime get phTime => now.toUtc().add(const Duration(hours: 8));
+
+  String get formattedTime {
     int hour = phTime.hour;
     final minute = phTime.minute.toString().padLeft(2, '0');
     final seconds = phTime.second.toString().padLeft(2, '0');
 
     final period = hour >= 12 ? "PM" : "AM";
 
-    // convert to 12-hour format
     hour = hour % 12;
     if (hour == 0) hour = 12;
 
@@ -466,8 +767,6 @@ class _PHTimeWidgetState extends State<_PHTimeWidget> {
   }
 
   String get formattedDate {
-    final phTime = now.toUtc().add(const Duration(hours: 8));
-
     final weekday = [
       "Monday",
       "Tuesday",
@@ -475,10 +774,9 @@ class _PHTimeWidgetState extends State<_PHTimeWidget> {
       "Thursday",
       "Friday",
       "Saturday",
-      "Sunday"
+      "Sunday",
     ][phTime.weekday - 1];
 
-    final day = phTime.day;
     final month = [
       "January",
       "February",
@@ -491,84 +789,79 @@ class _PHTimeWidgetState extends State<_PHTimeWidget> {
       "September",
       "October",
       "November",
-      "December"
+      "December",
     ][phTime.month - 1];
 
-    String suffix(int d) {
-      if (d >= 11 && d <= 13) return "th";
-      switch (d % 10) {
-        case 1:
-          return "st";
-        case 2:
-          return "nd";
-        case 3:
-          return "rd";
-        default:
-          return "th";
-      }
-    }
-
-    return "$weekday, ${day}${suffix(day)} of $month ${phTime.year}";
+    return "$weekday, ${phTime.day} ${month} ${phTime.year}";
   }
 
   @override
   Widget build(BuildContext context) {
     final layout = context.watch<LayoutProvider>();
 
-    if (layout.isMobile) return const SizedBox();
+    if (layout.isMobile) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        // decoration: BoxDecoration(
-        //   color: Colors.white.withOpacity(0.06),
-        //   borderRadius: BorderRadius.circular(10),
-        //   border: Border.all(
-        //     color: Colors.white.withOpacity(0.10),
-        //   ),
-        // ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            /// LABEL
-            Text(
-              "PHILIPPINE STANDARD TIME",
-              style: TextStyle(
-                color: Colors.white60,
-                fontSize: layout.bodyFontSize * 0.60,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 3),
-
-            /// DATE
-            Text(
-              formattedDate,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: layout.bodyFontSize * 0.70,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-
-            const SizedBox(height: 3),
-            Text(
-              formattedTime,
-              style: TextStyle(
-                color: const Color(0xFFC6A432),
-                fontSize: layout.bodyFontSize * 0.70,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-
-            /// TIME (highlighted slightly)
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+      margin:  const EdgeInsets.symmetric(horizontal: 13, vertical: 9), 
+      decoration: BoxDecoration(
+        color: darkSurface2,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: darkBorder,
         ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            color: goldAccent,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 245),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "PHILIPPINE STANDARD TIME",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    color: mutedText,
+                    fontSize: layout.bodyFontSize * 0.62,
+                    letterSpacing: 1,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  formattedDate,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    color: lightText,
+                    fontSize: layout.bodyFontSize * 0.72,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  formattedTime,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    color: goldAccent,
+                    fontSize: layout.bodyFontSize * 0.74,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

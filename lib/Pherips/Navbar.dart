@@ -135,6 +135,25 @@ class _DesktopNavMenuState extends State<_DesktopNavMenu> {
                       print(e);
                       break;
 
+                    case 'Project':
+                      final RenderBox box = menuKeys[e]!
+                          .currentContext!
+                          .findRenderObject() as RenderBox;
+
+                      final position = box.localToGlobal(Offset.zero);
+
+                      final screenSize = MediaQuery.of(context).size;
+
+                      final direction =
+                          RouteTransitionHelper.getDirectionFromPosition(
+                        position,
+                        screenSize,
+                      );
+                      Navigator.pushNamed(context, "/projectpage",
+                          arguments: direction);
+                      print(e);
+                      break;
+
                     case 'Dashboard':
                       final RenderBox box = menuKeys[e]!
                           .currentContext!
