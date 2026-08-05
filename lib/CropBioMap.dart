@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CropBioMap extends StatefulWidget {
   const CropBioMap({super.key});
@@ -36,17 +38,39 @@ class _CropBioMapState extends State<CropBioMap> {
 
   bool showLayerPanel = true;
 
+  bool rasterAccordionExpanded = true;
+  bool vectorAccordionExpanded = true;
+
   bool showMmsuMarker = true;
-  bool showSamplingPoints = true;
+  bool showSamplingPoints = false;
   bool showFieldBoundary = true;
-  bool showShapefiles = true;
+  bool showShapefiles = false;
   bool showRasters = false;
-  bool showOrthomosaic = false;
+  bool showOrthomosaic2026Dry = true;
+  bool showOrthomosaic2025Wet = false;
+  bool showOrthomosaic2025Dry = false;
 
   double rasterOpacity = 0.55;
-  double orthomosaicOpacity = 0.65;
+  double orthomosaic2026DryOpacity = 1;
+  double orthomosaic2025WetOpacity = 1;
+  double orthomosaic2025DryOpacity = 1;
 
-  String selectedBasemap = 'Google Hybrid';
+  String selectedBasemap = 'OpenStreetMap';
+
+  /// CropBio orthomosaic WMS layers from GeoServer.
+  /// The original OpenLayers preview URLs were converted to WMS tile layers
+  /// using image/png so they can render inside flutter_map.
+  static const String cropBioWmsBaseUrl =
+      'https://coaster.mmsu.edu.ph/geoserver/cropbio/wms?';
+
+  static const String orthomosaic2026DryLayer =
+      'cropbio:202603-RGB-reflectance_utm51_cog';
+
+  static const String orthomosaic2025WetLayer =
+      'cropbio:RGB-mosaic_reflectance';
+
+  static const String orthomosaic2025DryLayer =
+      'cropbio:202503_MMSU_reflectance';
 
   final List<LatLng> cropBioBoundary = const [
     LatLng(18.05820, 120.54180),
@@ -288,21 +312,24 @@ class _CropBioMapState extends State<CropBioMap> {
           tileProvider: CancellableNetworkTileProvider(),
         ),
 
-        /// Replace these placeholder URL templates with your actual backend
-        /// or tile server endpoints when available.
-        if (showOrthomosaic)
-          Opacity(
-            opacity: orthomosaicOpacity,
-            child: TileLayer(
-              urlTemplate:
-                  'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-              userAgentPackageName: 'com.example.cropbio',
-              tileSize: 256,
-              maxZoom: 24,
-              keepBuffer: 2,
-              retinaMode: false,
-              tileProvider: CancellableNetworkTileProvider(),
-            ),
+        /// Orthomosaic layers from GeoServer WMS.
+        /// GeoServer handles reprojection from the source CRS to the map CRS.
+        if (showOrthomosaic2026Dry)
+          _orthomosaicWmsLayer(
+            layerName: orthomosaic2026DryLayer,
+            opacity: orthomosaic2026DryOpacity,
+          ),
+
+        if (showOrthomosaic2025Wet)
+          _orthomosaicWmsLayer(
+            layerName: orthomosaic2025WetLayer,
+            opacity: orthomosaic2025WetOpacity,
+          ),
+
+        if (showOrthomosaic2025Dry)
+          _orthomosaicWmsLayer(
+            layerName: orthomosaic2025DryLayer,
+            opacity: orthomosaic2025DryOpacity,
           ),
 
         if (showRasters)
@@ -359,6 +386,34 @@ class _CropBioMapState extends State<CropBioMap> {
     );
   }
 
+  Widget _orthomosaicWmsLayer({
+    required String layerName,
+    required double opacity,
+  }) {
+    return Opacity(
+      opacity: opacity,
+      child: TileLayer(
+        wmsOptions: WMSTileLayerOptions(
+          baseUrl: cropBioWmsBaseUrl,
+          layers: [layerName],
+          styles: const [''],
+          format: 'image/png',
+          version: '1.1.0',
+          transparent: true,
+          otherParameters: const {
+            'tiled': 'true',
+          },
+        ),
+        userAgentPackageName: 'com.example.cropbio',
+        tileSize: 256,
+        maxZoom: 24,
+        keepBuffer: 2,
+        retinaMode: false,
+        tileProvider: CancellableNetworkTileProvider(),
+      ),
+    );
+  }
+
   Widget _layerPanel({
     required bool isMobile,
     VoidCallback? closeDrawer,
@@ -391,92 +446,136 @@ class _CropBioMapState extends State<CropBioMap> {
             child: ListView(
               physics: const BouncingScrollPhysics(),
               children: [
-                _panelSectionTitle('Map Layers'),
+                _panelSectionTitle('GIS Data'),
                 const SizedBox(height: 10),
-                _layerTile(
-                  title: 'MMSU Batac Center',
-                  subtitle: 'Primary CropBio dashboard map center',
-                  icon: Icons.location_on_rounded,
-                  enabled: showMmsuMarker,
-                  layerType: 'Reference',
-                  onChanged: (value) {
-                    setState(() => showMmsuMarker = value);
-                  },
-                  onDownload: () => _downloadLayer('MMSU Batac center'),
-                ),
-                _layerTile(
-                  title: 'Sampling Points',
-                  subtitle: 'Field and laboratory sampling locations',
-                  icon: Icons.grain_rounded,
-                  enabled: showSamplingPoints,
-                  layerType: 'Point shapefile',
-                  onChanged: (value) {
-                    setState(() => showSamplingPoints = value);
-                  },
-                  onDownload: () => _downloadLayer('Sampling points shapefile'),
-                ),
-                _layerTile(
-                  title: 'Field Boundary',
-                  subtitle: 'CropBio pilot field boundary layer',
-                  icon: Icons.crop_square_rounded,
-                  enabled: showFieldBoundary,
-                  layerType: 'Polygon shapefile',
-                  onChanged: (value) {
-                    setState(() => showFieldBoundary = value);
-                  },
-                  onDownload: () => _downloadLayer('Field boundary shapefile'),
-                ),
-                _layerTile(
-                  title: 'Shapefiles',
-                  subtitle: 'Vector layers for plots, parcels, and boundaries',
-                  icon: Icons.polyline_rounded,
-                  enabled: showShapefiles,
-                  layerType: 'Vector',
-                  onChanged: (value) {
-                    setState(() => showShapefiles = value);
-                  },
-                  onDownload: () => _downloadLayer('All shapefiles'),
-                ),
-                _layerTile(
-                  title: 'Raster Layers',
-                  subtitle: 'Vegetation indices, LAI, NDVI, EVI, and analysis rasters',
+
+                _gisAccordion(
+                  title: 'Raster Data',
+                  subtitle: 'Orthomosaic and image-based GIS layers',
                   icon: Icons.grid_on_rounded,
-                  enabled: showRasters,
-                  layerType: 'Raster',
-                  onChanged: (value) {
-                    setState(() => showRasters = value);
+                  initiallyExpanded: rasterAccordionExpanded,
+                  onExpansionChanged: (value) {
+                    setState(() => rasterAccordionExpanded = value);
                   },
-                  onDownload: () => _downloadLayer('Raster layers'),
-                  extra: _opacitySlider(
-                    label: 'Raster opacity',
-                    value: rasterOpacity,
-                    onChanged: showRasters
-                        ? (value) {
-                            setState(() => rasterOpacity = value);
-                          }
-                        : null,
-                  ),
+                  children: [
+                    _orthomosaicLayerTile(
+                      title: '2026 Dry Orthomosaic',
+                      subtitle: 'Drone RGB reflectance orthomosaic',
+                      icon: Icons.image_rounded,
+                      enabled: showOrthomosaic2026Dry,
+                      opacityLabel: '2026 dry opacity',
+                      opacityValue: orthomosaic2026DryOpacity,
+                      wmsLayerName: orthomosaic2026DryLayer,
+                      onChanged: (value) {
+                        setState(() => showOrthomosaic2026Dry = value);
+                      },
+                      onOpacityChanged: showOrthomosaic2026Dry
+                          ? (value) {
+                              setState(() => orthomosaic2026DryOpacity = value);
+                            }
+                          : null,
+                    ),
+                    _orthomosaicLayerTile(
+                      title: '2025 Wet Orthomosaic',
+                      subtitle: 'Wet-season RGB reflectance orthomosaic',
+                      icon: Icons.filter_hdr_rounded,
+                      enabled: showOrthomosaic2025Wet,
+                      opacityLabel: '2025 wet opacity',
+                      opacityValue: orthomosaic2025WetOpacity,
+                      wmsLayerName: orthomosaic2025WetLayer,
+                      onChanged: (value) {
+                        setState(() => showOrthomosaic2025Wet = value);
+                      },
+                      onOpacityChanged: showOrthomosaic2025Wet
+                          ? (value) {
+                              setState(() => orthomosaic2025WetOpacity = value);
+                            }
+                          : null,
+                    ),
+                    _orthomosaicLayerTile(
+                      title: '2025 Dry Orthomosaic',
+                      subtitle: 'Dry-season RGB reflectance orthomosaic',
+                      icon: Icons.wb_sunny_rounded,
+                      enabled: showOrthomosaic2025Dry,
+                      opacityLabel: '2025 dry opacity',
+                      opacityValue: orthomosaic2025DryOpacity,
+                      wmsLayerName: orthomosaic2025DryLayer,
+                      onChanged: (value) {
+                        setState(() => showOrthomosaic2025Dry = value);
+                      },
+                      onOpacityChanged: showOrthomosaic2025Dry
+                          ? (value) {
+                              setState(() => orthomosaic2025DryOpacity = value);
+                            }
+                          : null,
+                    ),
+
+                    const SizedBox(height: 4),
+                    _selectedDroneDataDownloadButton(),
+                    const SizedBox(height: 8),
+                    _activeWmsQgisButton(),
+                    const SizedBox(height: 8),
+                    _activeWmsArcGisProButton(),
+
+                  ],
                 ),
-                _layerTile(
-                  title: 'Orthomosaic',
-                  subtitle: 'Drone orthomosaic and high-resolution imagery',
-                  icon: Icons.image_rounded,
-                  enabled: showOrthomosaic,
-                  layerType: 'Orthomosaic',
-                  onChanged: (value) {
-                    setState(() => showOrthomosaic = value);
+
+                _gisAccordion(
+                  title: 'Vector Data',
+                  subtitle: 'Points, boundaries, and shapefile-based GIS layers',
+                  icon: Icons.polyline_rounded,
+                  initiallyExpanded: vectorAccordionExpanded,
+                  onExpansionChanged: (value) {
+                    setState(() => vectorAccordionExpanded = value);
                   },
-                  onDownload: () => _downloadLayer('Orthomosaic'),
-                  extra: _opacitySlider(
-                    label: 'Orthomosaic opacity',
-                    value: orthomosaicOpacity,
-                    onChanged: showOrthomosaic
-                        ? (value) {
-                            setState(() => orthomosaicOpacity = value);
-                          }
-                        : null,
-                  ),
+                  children: [
+                    _layerTile(
+                      title: 'MMSU Batac Center',
+                      subtitle: 'Primary CropBio dashboard map center',
+                      icon: Icons.location_on_rounded,
+                      enabled: showMmsuMarker,
+                      layerType: 'Reference Point',
+                      onChanged: (value) {
+                        setState(() => showMmsuMarker = value);
+                      },
+                      onDownload: () => _downloadLayer('MMSU Batac center'),
+                    ),
+                    _layerTile(
+                      title: 'Sampling Points',
+                      subtitle: 'Field and laboratory sampling locations',
+                      icon: Icons.grain_rounded,
+                      enabled: showSamplingPoints,
+                      layerType: 'Point Vector',
+                      onChanged: (value) {
+                        setState(() => showSamplingPoints = value);
+                      },
+                      onDownload: () => _downloadLayer('Sampling points vector'),
+                    ),
+                    _layerTile(
+                      title: 'Field Boundary',
+                      subtitle: 'CropBio pilot field boundary layer',
+                      icon: Icons.crop_square_rounded,
+                      enabled: showFieldBoundary,
+                      layerType: 'Polygon Vector',
+                      onChanged: (value) {
+                        setState(() => showFieldBoundary = value);
+                      },
+                      onDownload: () => _downloadLayer('Field boundary vector'),
+                    ),
+                    _layerTile(
+                      title: 'Shapefiles',
+                      subtitle: 'Vector layers for plots, parcels, and boundaries',
+                      icon: Icons.account_tree_rounded,
+                      enabled: showShapefiles,
+                      layerType: 'Vector Collection',
+                      onChanged: (value) {
+                        setState(() => showShapefiles = value);
+                      },
+                      onDownload: () => _downloadLayer('All shapefiles'),
+                    ),
+                  ],
                 ),
+
                 const SizedBox(height: 18),
                 _panelSectionTitle('Quick Downloads'),
                 const SizedBox(height: 10),
@@ -628,6 +727,349 @@ class _CropBioMapState extends State<CropBioMap> {
         fontSize: 12.5,
         fontWeight: FontWeight.w900,
         letterSpacing: 0.7,
+      ),
+    );
+  }
+
+  Widget _gisAccordion({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool initiallyExpanded,
+    required ValueChanged<bool> onExpansionChanged,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: darkSurface2,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: darkBorder),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          splashColor: primaryGreen.withOpacity(0.10),
+          highlightColor: primaryGreen.withOpacity(0.08),
+        ),
+        child: ExpansionTile(
+          key: PageStorageKey<String>('accordion_$title'),
+          initiallyExpanded: initiallyExpanded,
+          onExpansionChanged: onExpansionChanged,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          collapsedIconColor: goldAccent,
+          iconColor: goldAccent,
+          leading: Container(
+            height: 38,
+            width: 38,
+            decoration: BoxDecoration(
+              color: primaryGreen.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(
+                color: primaryGreen.withOpacity(0.30),
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: goldAccent,
+              size: 21,
+            ),
+          ),
+          title: Text(
+            title,
+            style: GoogleFonts.nunito(
+              color: lightText,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: GoogleFonts.nunito(
+              color: mutedText,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          children: children,
+        ),
+      ),
+    );
+  }
+
+  Widget _orthomosaicLayerTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool enabled,
+    required String opacityLabel,
+    required double opacityValue,
+    required String wmsLayerName,
+    required ValueChanged<bool> onChanged,
+    required ValueChanged<double>? onOpacityChanged,
+  }) {
+    return _layerTile(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      enabled: enabled,
+      layerType: 'Raster WMS',
+      onChanged: onChanged,
+      onDownload: enabled
+          ? () => _downloadSelectedDroneData(
+                displayName: title,
+                layerNames: [wmsLayerName],
+              )
+          : () => _showLayerMessage('Turn on $title before downloading it.'),
+      extra: Column(
+        children: [
+          _opacitySlider(
+            label: opacityLabel,
+            value: opacityValue,
+            onChanged: onOpacityChanged,
+          ),
+          const SizedBox(height: 8),
+          _qgisButton(
+            label: enabled ? 'Copy selected layer for QGIS' : 'Turn layer on for QGIS',
+            layerDisplayName: title,
+            layerName: wmsLayerName,
+            enabled: enabled,
+          ),
+          const SizedBox(height: 8),
+          _arcgisProButton(
+            label: enabled ? 'Copy selected layer for ArcGIS Pro' : 'Turn layer on for ArcGIS Pro',
+            layerDisplayName: title,
+            layerName: wmsLayerName,
+            enabled: enabled,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _qgisButton({
+    required String label,
+    required String layerDisplayName,
+    required String layerName,
+    required bool enabled,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 38,
+      child: OutlinedButton.icon(
+        onPressed: enabled
+            ? () {
+                _copyWmsForQgis(
+                  displayName: layerDisplayName,
+                  layerNames: [layerName],
+                );
+              }
+            : null,
+        icon: Icon(
+          Icons.copy_rounded,
+          size: 16,
+          color: enabled ? goldAccent : mutedText,
+        ),
+        label: Text(
+          label,
+          style: GoogleFonts.nunito(
+            color: enabled ? lightText : mutedText,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: darkSurface2,
+          disabledBackgroundColor: darkSurface2.withOpacity(0.70),
+          side: BorderSide(
+            color: enabled
+                ? goldAccent.withOpacity(0.55)
+                : darkBorder.withOpacity(0.65),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _arcgisProButton({
+    required String label,
+    required String layerDisplayName,
+    required String layerName,
+    required bool enabled,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 38,
+      child: OutlinedButton.icon(
+        onPressed: enabled
+            ? () {
+                _copyWmsForArcgisPro(
+                  displayName: layerDisplayName,
+                  layerNames: [layerName],
+                );
+              }
+            : null,
+        icon: Icon(
+          Icons.desktop_windows_rounded,
+          size: 16,
+          color: enabled ? goldAccent : mutedText,
+        ),
+        label: Text(
+          label,
+          style: GoogleFonts.nunito(
+            color: enabled ? lightText : mutedText,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: darkSurface2,
+          disabledBackgroundColor: darkSurface2.withOpacity(0.70),
+          side: BorderSide(
+            color: enabled
+                ? goldAccent.withOpacity(0.55)
+                : darkBorder.withOpacity(0.65),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _selectedDroneDataDownloadButton() {
+    final activeLayerNames = _activeWmsLayerNames();
+    final activeCount = activeLayerNames.length;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 42,
+      child: ElevatedButton.icon(
+        onPressed: activeCount > 0
+            ? () {
+                _downloadSelectedDroneData(
+                  displayName: 'Selected drone data',
+                  layerNames: activeLayerNames,
+                );
+              }
+            : null,
+        icon: Icon(
+          Icons.download_rounded,
+          size: 18,
+          color: activeCount > 0 ? Colors.black : mutedText,
+        ),
+        label: Text(
+          activeCount > 0
+              ? 'Download $activeCount selected drone layer(s)'
+              : 'Select/show drone data first',
+          style: GoogleFonts.nunito(
+            color: activeCount > 0 ? Colors.black : mutedText,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: activeCount > 0 ? goldAccent : darkSurface3,
+          disabledBackgroundColor: darkSurface3,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _activeWmsQgisButton() {
+    final activeLayerNames = _activeWmsLayerNames();
+    final activeCount = activeLayerNames.length;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 42,
+      child: ElevatedButton.icon(
+        onPressed: activeCount > 0
+            ? () {
+                _copyWmsForQgis(
+                  displayName: 'Selected CropBio WMS layers',
+                  layerNames: activeLayerNames,
+                );
+              }
+            : null,
+        icon: Icon(
+          Icons.copy_rounded,
+          size: 18,
+          color: activeCount > 0 ? Colors.black : mutedText,
+        ),
+        label: Text(
+          activeCount > 0
+              ? 'Copy $activeCount selected WMS layer(s) for QGIS'
+              : 'Select/show a raster layer first',
+          style: GoogleFonts.nunito(
+            color: activeCount > 0 ? Colors.black : mutedText,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: activeCount > 0 ? goldAccent : darkSurface3,
+          disabledBackgroundColor: darkSurface3,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _activeWmsArcGisProButton() {
+    final activeLayerNames = _activeWmsLayerNames();
+    final activeCount = activeLayerNames.length;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 42,
+      child: ElevatedButton.icon(
+        onPressed: activeCount > 0
+            ? () {
+                _copyWmsForArcgisPro(
+                  displayName: 'Selected CropBio WMS layers',
+                  layerNames: activeLayerNames,
+                );
+              }
+            : null,
+        icon: Icon(
+          Icons.desktop_windows_rounded,
+          size: 18,
+          color: activeCount > 0 ? Colors.black : mutedText,
+        ),
+        label: Text(
+          activeCount > 0
+              ? 'Copy $activeCount selected WMS layer(s) for ArcGIS Pro'
+              : 'Select/show a raster layer first',
+          style: GoogleFonts.nunito(
+            color: activeCount > 0 ? Colors.black : mutedText,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: activeCount > 0 ? goldAccent : darkSurface3,
+          disabledBackgroundColor: darkSurface3,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
+        ),
       ),
     );
   }
@@ -809,31 +1251,40 @@ class _CropBioMapState extends State<CropBioMap> {
   Widget _downloadGroup() {
     return Column(
       children: [
+        _downloadButton(
+          label: 'Download Selected Drone Data',
+          icon: Icons.download_rounded,
+          fullWidth: true,
+          onPressed: () => _downloadSelectedDroneData(
+            displayName: 'Selected drone data',
+            layerNames: _activeWmsLayerNames(),
+          ),
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _downloadButton(
-                label: 'All Layers',
-                icon: Icons.archive_rounded,
-                onPressed: () => _downloadLayer('All map layers'),
+                label: 'QGIS',
+                icon: Icons.copy_rounded,
+                onPressed: () => _copyWmsForQgis(
+                  displayName: 'Selected CropBio WMS layers',
+                  layerNames: _activeWmsLayerNames(),
+                ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _downloadButton(
-                label: 'Metadata',
-                icon: Icons.description_rounded,
-                onPressed: () => _downloadLayer('Layer metadata'),
+                label: 'ArcGIS Pro',
+                icon: Icons.desktop_windows_rounded,
+                onPressed: () => _copyWmsForArcgisPro(
+                  displayName: 'Selected CropBio WMS layers',
+                  layerNames: _activeWmsLayerNames(),
+                ),
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        _downloadButton(
-          label: 'Current Map View',
-          icon: Icons.map_rounded,
-          fullWidth: true,
-          onPressed: () => _downloadLayer('Current map view'),
         ),
       ],
     );
@@ -1208,7 +1659,9 @@ class _CropBioMapState extends State<CropBioMap> {
       showFieldBoundary,
       showShapefiles,
       showRasters,
-      showOrthomosaic,
+      showOrthomosaic2026Dry,
+      showOrthomosaic2025Wet,
+      showOrthomosaic2025Dry,
     ].where((value) => value).length;
   }
 
@@ -1216,19 +1669,171 @@ class _CropBioMapState extends State<CropBioMap> {
     mapController.move(mmsuBatac, 17);
   }
 
-  void _downloadLayer(String layerName) {
+  String _wmsCapabilitiesUrl() {
+    final separator = cropBioWmsBaseUrl.endsWith('?') ? '' : '?';
+
+    return '${cropBioWmsBaseUrl}${separator}service=WMS&version=1.1.0&request=GetCapabilities';
+  }
+
+  String _wmsGetMapUrlForLayers(List<String> layerNames) {
+    final separator = cropBioWmsBaseUrl.endsWith('?') ? '' : '?';
+    final layers = Uri.encodeQueryComponent(layerNames.join(','));
+
+    return '${cropBioWmsBaseUrl}${separator}'
+        'service=WMS&version=1.1.0&request=GetMap'
+        '&layers=$layers'
+        '&styles='
+        '&bbox=120.53201128805078,18.03867056304924,120.56059676171877,18.068850862876243'
+        '&width=1600&height=1600'
+        '&srs=EPSG:4326'
+        '&format=image/png'
+        '&transparent=true';
+  }
+
+  List<String> _activeWmsLayerNames() {
+    final layers = <String>[];
+
+    if (showOrthomosaic2026Dry) {
+      layers.add(orthomosaic2026DryLayer);
+    }
+
+    if (showOrthomosaic2025Wet) {
+      layers.add(orthomosaic2025WetLayer);
+    }
+
+    if (showOrthomosaic2025Dry) {
+      layers.add(orthomosaic2025DryLayer);
+    }
+
+    return layers;
+  }
+
+  Future<void> _downloadSelectedDroneData({
+    required String displayName,
+    required List<String> layerNames,
+  }) async {
+    if (layerNames.isEmpty) {
+      _showLayerMessage('Please turn on at least one drone orthomosaic first.');
+      return;
+    }
+
+    final downloadUrl = _wmsGetMapUrlForLayers(layerNames);
+    final uri = Uri.parse(downloadUrl);
+
+    await Clipboard.setData(
+      ClipboardData(text: downloadUrl),
+    );
+
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!mounted) return;
+
+    _showLayerMessage(
+      opened
+          ? '${layerNames.length} selected drone layer(s) opened for download. The GetMap URL was also copied.'
+          : '${layerNames.length} selected drone layer(s) copied as a GetMap download URL.',
+    );
+  }
+
+  Future<void> _copyWmsForQgis({
+    required String displayName,
+    required List<String> layerNames,
+  }) async {
+    if (layerNames.isEmpty) {
+      _showLayerMessage('Please turn on at least one raster WMS layer first.');
+      return;
+    }
+
+    final qgisConnectionText = [
+      'CropBio selected WMS layer(s) for QGIS',
+      '',
+      'Name: $displayName',
+      'WMS Server URL: ${_wmsCapabilitiesUrl()}',
+      'Selected layer(s):',
+      ...layerNames.map((layerName) => '- $layerName'),
+      'Format: image/png',
+      '',
+      'In QGIS:',
+      '1. Open Layer > Data Source Manager > WMS/WMTS.',
+      '2. Click New.',
+      '3. Paste the WMS Server URL above.',
+      '4. Click Connect.',
+      '5. Select only the layer(s) listed above.',
+      '',
+      'Selected GetMap URL:',
+      _wmsGetMapUrlForLayers(layerNames),
+    ].join('\n');
+
+    await Clipboard.setData(
+      ClipboardData(text: qgisConnectionText),
+    );
+
+    if (!mounted) return;
+
+    _showLayerMessage('${layerNames.length} selected WMS layer(s) copied for QGIS.');
+  }
+
+  Future<void> _copyWmsForArcgisPro({
+    required String displayName,
+    required List<String> layerNames,
+  }) async {
+    if (layerNames.isEmpty) {
+      _showLayerMessage('Please turn on at least one raster WMS layer first.');
+      return;
+    }
+
+    final arcgisProConnectionText = [
+      'CropBio selected WMS layer(s) for ArcGIS Pro',
+      '',
+      'Name: $displayName',
+      'WMS Server URL: ${_wmsCapabilitiesUrl()}',
+      'Selected layer(s):',
+      ...layerNames.map((layerName) => '- $layerName'),
+      'Format: image/png',
+      '',
+      'In ArcGIS Pro:',
+      '1. Open Insert > Connections > Server > New WMS Server.',
+      '2. Paste the WMS Server URL above.',
+      '3. Click OK/Connect.',
+      '4. Add only the selected layer(s) listed above to your map.',
+      '',
+      'Selected GetMap URL:',
+      _wmsGetMapUrlForLayers(layerNames),
+    ].join('\n');
+
+    await Clipboard.setData(
+      ClipboardData(text: arcgisProConnectionText),
+    );
+
+    if (!mounted) return;
+
+    _showLayerMessage('${layerNames.length} selected WMS layer(s) copied for ArcGIS Pro.');
+  }
+
+  void _showLayerMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: darkSurface2,
         behavior: SnackBarBehavior.floating,
         content: Text(
-          '$layerName download requested. Connect this button to your backend download endpoint.',
+          message,
           style: GoogleFonts.nunito(
             color: lightText,
             fontWeight: FontWeight.w700,
           ),
         ),
       ),
+    );
+  }
+
+  void _downloadLayer(String layerName) {
+    _showLayerMessage(
+      '$layerName download requested. Use the selected drone data download button for WMS orthomosaics.',
     );
   }
 }
