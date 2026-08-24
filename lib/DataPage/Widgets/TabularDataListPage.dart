@@ -58,6 +58,10 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
   bool _loading = true;
   late int selectedYear;
 
+  // Populated from the crop_samples collection returned by /fetch_all.
+  // The year filter now shows only years that are actually available.
+  List<int> _availableYears = [];
+
   String selectedSeason = 'All';
 
   final List<String> seasonOptions = [
@@ -91,15 +95,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     super.dispose();
   }
 
-  List<int> get years {
-    final currentYear =
-        DateTime.now().year < 2025 ? 2025 : DateTime.now().year;
-
-    return List.generate(
-      currentYear - 2025 + 1,
-      (index) => 2025 + index,
-    ).reversed.toList();
-  }
+  List<int> get years => _availableYears;
 
   Future<void> loadCropSamples() async {
     setState(() {
@@ -107,13 +103,22 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     });
 
     try {
-      final apiUrl = '${Config.baseUrl}/fetch_all';
+      final apiUrl = '${Config.baseUrl}/fetch_all?collection=crop_samples&limit=10000';
       final data = await fetchCropSamples(apiUrl: apiUrl);
 
       if (!mounted) return;
 
+      final records = _normalizeRecords(data);
+      final availableYears = _extractAvailableYears(records);
+
       setState(() {
-        _records = _normalizeRecords(data);
+        _records = records;
+        _availableYears = availableYears;
+
+        if (_availableYears.isNotEmpty && !_availableYears.contains(selectedYear)) {
+          selectedYear = _availableYears.first;
+        }
+
         _loading = false;
       });
 
@@ -124,6 +129,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
       setState(() {
         _loading = false;
         _records = [];
+        _availableYears = [];
         _visibleRecords = [];
         _tableRecords = [];
         _columns = ['#'];
@@ -163,6 +169,9 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
           final groupSeason = collectionGroup['season']?.toString();
           final groupYear = collectionGroup['year']?.toString();
+          final groupCollectionName =
+              collectionGroup['collection_name']?.toString() ??
+              collectionGroup['source_collection']?.toString();
 
           final groupData = collectionGroup['data'];
 
@@ -173,9 +182,17 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
 
             final record = _mapFromDynamic(item);
 
-            record['year'] ??= groupYear;
-            record['season'] ??= groupSeason;
-            record['source_collection'] ??= '${groupYear}_${groupSeason}_crops';
+            if (groupYear != null && groupYear.isNotEmpty) {
+              record['year'] ??= groupYear;
+            }
+
+            if (groupSeason != null && groupSeason.isNotEmpty) {
+              record['season'] ??= groupSeason;
+            }
+
+            if (groupCollectionName != null && groupCollectionName.isNotEmpty) {
+              record['source_collection'] ??= groupCollectionName;
+            }
 
             final cleanedRecord = _flattenPlotInfo(record);
 
@@ -344,6 +361,23 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
     if (value is String && value.trim().isEmpty) return true;
 
     return false;
+  }
+
+  List<int> _extractAvailableYears(List<Map<String, dynamic>> records) {
+    final yearsSet = <int>{};
+
+    for (final record in records) {
+      final year = _extractYear(record);
+
+      if (year != null) {
+        yearsSet.add(year);
+      }
+    }
+
+    final yearList = yearsSet.toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    return yearList;
   }
 
   void _loadData() {
@@ -694,6 +728,8 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
       'year',
       'SURVEY_YEAR',
       'survey_year',
+      'selectedYear',
+      'selected_year',
     ];
 
     for (final key in yearKeys) {
@@ -724,6 +760,8 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
       'survey_date',
       'PLANTING_DATE',
       'planting_date',
+      'uploaded_at',
+      'uploadedAt',
     ];
 
     for (final key in dateKeys) {
@@ -740,6 +778,18 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
       }
 
       final yearMatch = RegExp(r'(20\d{2})').firstMatch(value.toString());
+
+      if (yearMatch != null) {
+        return int.tryParse(yearMatch.group(1)!);
+      }
+    }
+
+    final sourceValue = record['source_collection'] ??
+        record['collection_name'] ??
+        record['file_name'];
+
+    if (sourceValue != null) {
+      final yearMatch = RegExp(r'(20\d{2})').firstMatch(sourceValue.toString());
 
       if (yearMatch != null) {
         return int.tryParse(yearMatch.group(1)!);
@@ -1167,6 +1217,10 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
   }
 
   String get _selectedFilterLabel {
+    if (years.isEmpty) {
+      return selectedSeason == 'All' ? 'all available crop_samples records' : selectedSeason;
+    }
+
     if (selectedSeason == 'All') {
       return '$selectedYear';
     }
@@ -1313,32 +1367,37 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  SizedBox(
-                    height: layout.isMobile ? 190 : 210,
-                    child: ListView.separated(
-                      itemCount: years.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final year = years[index];
-                        final isSelected = selectedYear == year;
+                  years.isEmpty
+                      ? _emptyYearFilterMessage(layout)
+                      : SizedBox(
+                          height: layout.isMobile ? 190 : 210,
+                          child: ListView.separated(
+                            itemCount: years.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final year = years[index];
+                              final isSelected = selectedYear == year;
 
-                        return _filterTile(
-                          selected: isSelected,
-                          icon: Icons.calendar_month_rounded,
-                          label: year.toString(),
-                          onTap: () {
-                            selectedYear = year;
-                            _searchController.clear();
-                            _loadData();
+                              return _filterTile(
+                                selected: isSelected,
+                                icon: Icons.calendar_month_rounded,
+                                label: year.toString(),
+                                onTap: () {
+                                  setState(() {
+                                    selectedYear = year;
+                                  });
 
-                            if (isDrawer) {
-                              Navigator.pop(context);
-                            }
-                          },
-                        );
-                      },
-                    ),
-                  ),
+                                  _searchController.clear();
+                                  _loadData();
+
+                                  if (isDrawer) {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                        ),
                   const SizedBox(height: 28),
                   Text(
                     'FILTER BY SEASON',
@@ -1356,6 +1415,27 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _emptyYearFilterMessage(LayoutProvider layout) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: darkSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: darkBorder),
+      ),
+      child: Text(
+        'No year field found in crop_samples.',
+        style: GoogleFonts.nunito(
+          color: mutedText,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          height: 1.35,
+        ),
       ),
     );
   }
@@ -1537,7 +1617,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Crop records for $_selectedFilterLabel',
+                      'crop_samples records for $_selectedFilterLabel',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.nunito(
@@ -1672,7 +1752,7 @@ class _TabularDataListPageState extends State<TabularDataListPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Crop records overview for $_selectedFilterLabel',
+                  'crop_samples records for $_selectedFilterLabel',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(

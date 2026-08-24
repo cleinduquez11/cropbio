@@ -19,6 +19,15 @@ from itsdangerous import URLSafeTimedSerializer
 
 import logging
 import time
+from datetime import datetime, timezone, date
+import csv
+import io
+import os
+import uuid
+import math
+import pandas as pd
+from werkzeug.utils import secure_filename
+
 
 # Token generator
 serializer = URLSafeTimedSerializer("SECRET_KEY_123")
@@ -187,6 +196,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 plant_samples_collection = collections["plant_samples"]
 crop_samples_collection = collections["crop_samples"]
 plots_collection = collections["plots"]
+metadata_collection = collections["metadata"]
 # collection = collections["crops"]
 userCollection = collections['users']
 # classroomCollection = collectionss['Classroom']
@@ -211,97 +221,335 @@ os.makedirs(PLOT_UPLOAD_FOLDER, exist_ok=True)
 # Define which columns make a record unique
 unique_keys = ["CODE"]  # change to your actual unique columns
 
-@app.route("/uploadCropData", methods=["POST"])
-def upload_file():
+# @app.route("/uploadCropData", methods=["POST"])
+# def upload_file():
 
-    if "file" not in request.files:
-        return jsonify({"success": False, "message": "No file part"}), 400
+#     if "file" not in request.files:
+#         return jsonify({"success": False, "message": "No file part"}), 400
 
-    file = request.files["file"]
+#     file = request.files["file"]
 
-    if file.filename == "":
-        return jsonify({"success": False, "message": "No selected file"}), 400
+#     if file.filename == "":
+#         return jsonify({"success": False, "message": "No selected file"}), 400
 
-    if not file.filename.endswith(".csv"):
-        return jsonify({"success": False, "message": "File must be CSV"}), 400
+#     if not file.filename.endswith(".csv"):
+#         return jsonify({"success": False, "message": "File must be CSV"}), 400
 
 
-    selected_year = request.form.get("year")
-    selected_season = request.form.get("season")
-    seasonal_crops_collection = selected_year + "_" + selected_season + "_crops"
+#     selected_year = request.form.get("year")
+#     selected_season = request.form.get("season")
+#     seasonal_crops_collection = selected_year + "_" + selected_season + "_crops"
 
-    if seasonal_crops_collection not in db.list_collection_names():
-        db.create_collection(seasonal_crops_collection)
-        print(f"Collection '{seasonal_crops_collection}' created.")
+#     if seasonal_crops_collection not in db.list_collection_names():
+#         db.create_collection(seasonal_crops_collection)
+#         print(f"Collection '{seasonal_crops_collection}' created.")
 
-    seasonal_crops_collections = db[seasonal_crops_collection]
-    # Timestamped folder
-    now = datetime.now()
-    now_str = now.strftime("%Y_%m_%d_%H_%M_%S")
-    updated_folder = os.path.join(CROP_UPLOAD_FOLDER, selected_year, selected_season, now_str)
-    os.makedirs(updated_folder, exist_ok=True)
+#     seasonal_crops_collections = db[seasonal_crops_collection]
+#     # Timestamped folder
+#     now = datetime.now()
+#     now_str = now.strftime("%Y_%m_%d_%H_%M_%S")
+#     updated_folder = os.path.join(CROP_UPLOAD_FOLDER, selected_year, selected_season, now_str)
+#     os.makedirs(updated_folder, exist_ok=True)
 
-    file_path = os.path.join(updated_folder, file.filename)
-    file.save(file_path)
+#     file_path = os.path.join(updated_folder, file.filename)
+#     file.save(file_path)
 
-    try:
-        # Read CSV with fallback
-        try:
-            df = pd.read_csv(file_path, encoding='utf-8')
-        except UnicodeDecodeError:
-            df = pd.read_csv(file_path, encoding='latin1')
+#     try:
+#         # Read CSV with fallback
+#         try:
+#             df = pd.read_csv(file_path, encoding='utf-8')
+#         except UnicodeDecodeError:
+#             df = pd.read_csv(file_path, encoding='latin1')
 
-        # Clean column names
-        df.columns = [col.strip().replace(' ', '_') for col in df.columns]
+#         # Clean column names
+#         df.columns = [col.strip().replace(' ', '_') for col in df.columns]
 
-        # Strip strings
-        df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
+#         # Strip strings
+#         df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
 
-        # Replace blanks / "*no data"
-        df.replace(to_replace=["", "*no data"], value=None, inplace=True)
+#         # Replace blanks / "*no data"
+#         df.replace(to_replace=["", "*no data"], value=None, inplace=True)
 
-        if df.empty:
-            return jsonify({"success": False, "message": "CSV has no data"}), 400
+#         if df.empty:
+#             return jsonify({"success": False, "message": "CSV has no data"}), 400
 
-        # Build set of existing keys in MongoDB
-        existing_keys = set()
-        for doc in seasonal_crops_collections.find({}, {k: 1 for k in unique_keys}):
-            key_tuple = tuple(doc.get(k) for k in unique_keys)
-            existing_keys.add(key_tuple)
+#         # Build set of existing keys in MongoDB
+#         existing_keys = set()
+#         for doc in seasonal_crops_collections.find({}, {k: 1 for k in unique_keys}):
+#             key_tuple = tuple(doc.get(k) for k in unique_keys)
+#             existing_keys.add(key_tuple)
 
-        # Filter new records only
-        new_records = []
-        for _, row in df.iterrows():
-            key_tuple = tuple(row.get(k) for k in unique_keys)
-            if key_tuple not in existing_keys:
-                new_records.append(row.to_dict())
-                existing_keys.add(key_tuple)  # avoid duplicates within CSV itself
+#         # Filter new records only
+#         new_records = []
+#         for _, row in df.iterrows():
+#             key_tuple = tuple(row.get(k) for k in unique_keys)
+#             if key_tuple not in existing_keys:
+#                 new_records.append(row.to_dict())
+#                 existing_keys.add(key_tuple)  # avoid duplicates within CSV itself
 
-        if not new_records:
-            os.remove(file_path)
-            return jsonify({"success": True, "filename": file.filename,
-                            "inserted_count": 0, "message": "All records are duplicates"}), 200
+#         if not new_records:
+#             os.remove(file_path)
+#             return jsonify({"success": True, "filename": file.filename,
+#                             "inserted_count": 0, "message": "All records are duplicates"}), 200
         
 
 
-        # Insert new records
-        result = seasonal_crops_collections.insert_many(new_records)
+#         # Insert new records
+#         result = seasonal_crops_collections.insert_many(new_records)
+
+#         return jsonify({
+#             "success": True,
+#             "filename": file.filename,
+#             "inserted_count": len(result.inserted_ids)
+#         }), 200
+
+#     except pd.errors.EmptyDataError:
+#         return jsonify({"success": False, "message": "CSV is empty"}), 400
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+
+
+def clean_cell_value(value):
+    """
+    Converts values into JSON/MongoDB-safe values.
+    This does not normalize column names.
+    """
+    if value is None:
+        return ""
+
+    if isinstance(value, float) and math.isnan(value):
+        return ""
+
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+
+    return value
+
+
+def pad_rows(rows):
+    """
+    Makes all rows equal in length.
+    This is not column normalization; it only prevents missing cells
+    when some rows are shorter than others.
+    """
+    if not rows:
+        return []
+
+    max_columns = max(len(row) for row in rows)
+
+    padded_rows = []
+    for row in rows:
+        padded = list(row)
+
+        while len(padded) < max_columns:
+            padded.append("")
+
+        padded_rows.append(padded)
+
+    return padded_rows
+
+
+def parse_csv_file(file_bytes):
+    """
+    Reads CSV without requiring any fixed columns.
+    """
+    encodings = ["utf-8-sig", "utf-8", "latin-1"]
+
+    last_error = None
+
+    for encoding in encodings:
+        try:
+            text = file_bytes.decode(encoding)
+            reader = csv.reader(io.StringIO(text))
+            rows = [row for row in reader]
+            break
+        except Exception as e:
+            last_error = e
+            rows = None
+
+    if rows is None:
+        raise ValueError(f"Unable to decode CSV file: {last_error}")
+
+    # Remove fully empty rows only
+    rows = [
+        row for row in rows
+        if any(str(cell).strip() for cell in row)
+    ]
+
+    return pad_rows(rows)
+
+
+def parse_excel_file(file_bytes):
+    """
+    Reads Excel without requiring any fixed columns.
+    Uses the first sheet by default.
+    """
+    excel_buffer = io.BytesIO(file_bytes)
+
+    # header=None keeps the first row as ordinary data first,
+    # so we can manually treat it as the header without pandas renaming columns.
+    df = pd.read_excel(
+        excel_buffer,
+        header=None,
+        dtype=object,
+        keep_default_na=False,
+    )
+
+    rows = df.values.tolist()
+
+    # Remove fully empty rows only
+    rows = [
+        row for row in rows
+        if any(str(cell).strip() for cell in row)
+    ]
+
+    cleaned_rows = []
+    for row in rows:
+        cleaned_rows.append([clean_cell_value(cell) for cell in row])
+
+    return pad_rows(cleaned_rows)
+
+
+def parse_uploaded_file(file_bytes, file_name):
+    """
+    Detects file type by filename extension, not content type.
+    This is important because Flutter may still send Excel as text/csv
+    depending on your MultipartFile contentType setting.
+    """
+    extension = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+
+    if extension == "csv":
+        return parse_csv_file(file_bytes)
+
+    if extension in ["xlsx", "xls"]:
+        return parse_excel_file(file_bytes)
+
+    # Fallback: try CSV first
+    try:
+        return parse_csv_file(file_bytes)
+    except Exception:
+        raise ValueError("Unsupported file type. Please upload CSV, XLSX, or XLS.")
+
+
+@app.route("/uploadCropData", methods=["POST"])
+def upload_crop_data():
+    try:
+        uploaded_file = request.files.get("file")
+        selected_year = request.form.get("year", "")
+        selected_season = request.form.get("season", "")
+
+        if uploaded_file is None:
+            return jsonify({
+                "success": False,
+                "message": "No file uploaded.",
+                "inserted_count": 0,
+            }), 400
+
+        original_file_name = uploaded_file.filename or "uploaded_file"
+        safe_file_name = secure_filename(original_file_name)
+
+        file_bytes = uploaded_file.read()
+
+        if not file_bytes:
+            return jsonify({
+                "success": False,
+                "message": "Uploaded file is empty.",
+                "inserted_count": 0,
+            }), 400
+
+        rows = parse_uploaded_file(file_bytes, safe_file_name)
+
+        if not rows:
+            return jsonify({
+                "success": False,
+                "message": "No readable rows found in the uploaded file.",
+                "inserted_count": 0,
+            }), 400
+
+        # First row is treated as the header exactly as provided.
+        columns = [str(cell) for cell in rows[0]]
+        data_rows = rows[1:]
+
+        if not columns:
+            return jsonify({
+                "success": False,
+                "message": "No columns found in the uploaded file.",
+                "inserted_count": 0,
+            }), 400
+
+        if not data_rows:
+            return jsonify({
+                "success": False,
+                "message": "The uploaded file has headers but no data rows.",
+                "inserted_count": 0,
+            }), 400
+
+        upload_id = str(uuid.uuid4())
+        uploaded_at = datetime.now(timezone.utc)
+
+        # Store upload metadata once.
+        metadata_collection.insert_one({
+            "upload_id": upload_id,
+            "file_name": safe_file_name,
+            "original_file_name": original_file_name,
+            "year": selected_year,
+            "season": selected_season,
+            "columns": columns,
+            "column_count": len(columns),
+            "row_count": len(data_rows),
+            "uploaded_at": uploaded_at,
+        })
+
+        # Store each row as values array.
+        # This preserves all columns, including duplicate or blank column names.
+        documents = []
+
+        for row_index, row in enumerate(data_rows, start=1):
+            values = [clean_cell_value(value) for value in row]
+
+            documents.append({
+                "upload_id": upload_id,
+                "row_index": row_index,
+                "file_name": safe_file_name,
+                "year": selected_year,
+                "season": selected_season,
+                "values": values,
+                "uploaded_at": uploaded_at,
+            })
+
+        # Insert in batches for large files.
+        batch_size = 1000
+        inserted_count = 0
+
+        for start in range(0, len(documents), batch_size):
+            batch = documents[start:start + batch_size]
+            result = crop_samples_collection.insert_many(batch)
+            inserted_count += len(result.inserted_ids)
 
         return jsonify({
             "success": True,
-            "filename": file.filename,
-            "inserted_count": len(result.inserted_ids)
+            "message": "File uploaded successfully.",
+            "upload_id": upload_id,
+            "file_name": safe_file_name,
+            "year": selected_year,
+            "season": selected_season,
+            "column_count": len(columns),
+            "row_count": len(data_rows),
+            "inserted_count": inserted_count,
+            "columns": columns,
         }), 200
 
-    except pd.errors.EmptyDataError:
-        return jsonify({"success": False, "message": "CSV is empty"}), 400
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-
+        return jsonify({
+            "success": False,
+            "message": f"Upload failed: {str(e)}",
+            "inserted_count": 0,
+        }), 500
 
 
 
@@ -1076,95 +1324,231 @@ Invalid or expired verification link.
 
 def clean_for_json(doc):
     """
-    Recursively convert NaN/Infinity in dict to None
+    Recursively convert MongoDB/Pandas/Python values into JSON-safe values.
+    This keeps all original fields from the database and does not remap columns.
     """
+    if isinstance(doc, ObjectId):
+        return str(doc)
+
+    if isinstance(doc, (datetime, date)):
+        return doc.isoformat()
+
     if isinstance(doc, dict):
-        return {k: clean_for_json(v) for k, v in doc.items()}
-    elif isinstance(doc, list):
+        return {str(k): clean_for_json(v) for k, v in doc.items()}
+
+    if isinstance(doc, (list, tuple)):
         return [clean_for_json(item) for item in doc]
-    elif isinstance(doc, float) and (math.isnan(doc) or math.isinf(doc)):
+
+    try:
+        if pd.isna(doc):
+            return None
+    except Exception:
+        pass
+
+    if isinstance(doc, float) and (math.isnan(doc) or math.isinf(doc)):
         return None
-    else:
-        return doc
 
+    return doc
 
-
-
-# @app.route("/fetch_all", methods=["GET"])
-# def fetch_all():
-#     try:
-#         # Get all documents and convert ObjectId to string
-#         summary_crop_samples_collections = db['2025_Dry_crops']
-#         records = []
-#         for doc in summary_crop_samples_collections.find():
-#             doc["_id"] = str(doc["_id"])
-#             doc = clean_for_json(doc)  # <-- clean NaN / Inf
-#             records.append(doc)
-
-#         return jsonify({"success": True, "data": records}), 200
-
-#     except Exception as e:
-#         import traceback
-#         traceback.print_exc()
-#         return jsonify({"success": False, "message": str(e)}), 500
 
 
 @app.route("/fetch_all", methods=["GET"])
 def fetch_all():
+    """
+    Fetch records from the collections available in the database.
+
+    This version does not assume fixed collection names such as
+    2025_Dry_crops only. It can read:
+      1. normal MongoDB documents with flexible keys; and
+      2. flexible uploaded rows stored as:
+         {"upload_id": ..., "values": [...]}
+         with column headers saved in the metadata collection.
+
+    Optional query parameters:
+      ?collection=<name>      fetch one collection only
+      ?limit=500             max records per collection, default 1000
+      ?include_users=true    include the users collection, default false
+      ?include_empty=true    include empty collections, default false
+    """
     try:
-        collections = []
+        requested_collection = request.args.get("collection")
+        include_users = request.args.get("include_users", "false").lower() == "true"
+        include_empty = request.args.get("include_empty", "false").lower() == "true"
 
-        # Include crop collections from 2025 up to current year
-        start_year = 2025
-        end_year = datetime.now().year
+        try:
+            limit = int(request.args.get("limit", 1000))
+        except ValueError:
+            limit = 1000
 
-        seasons = ["Dry", "Wet"]
+        limit = max(1, min(limit, 10000))
 
-        existing_collections = db.list_collection_names()
+        existing_collections = sorted(db.list_collection_names())
 
-        for year in range(start_year, end_year + 1):
-            for season in seasons:
-                collection_name = f"{year}_{season}_crops"
+        if requested_collection:
+            if requested_collection not in existing_collections:
+                return jsonify({
+                    "success": False,
+                    "message": f"Collection '{requested_collection}' does not exist.",
+                    "available_collections": existing_collections,
+                }), 404
 
-                # Skip missing collections
-                if collection_name not in existing_collections:
-                    continue
+            collection_names = [requested_collection]
+        else:
+            collection_names = [
+                name for name in existing_collections
+                if _should_include_collection(name, include_users=include_users)
+            ]
 
-                crop_collection = db[collection_name]
+        metadata_by_upload_id = _load_upload_metadata_by_id()
 
-                data = []
+        response_collections = []
+        total_records = 0
 
-                for doc in crop_collection.find().sort("_id", -1):
-                    doc["_id"] = str(doc["_id"])
+        for collection_name in collection_names:
+            mongo_collection = db[collection_name]
+            total_count = mongo_collection.count_documents({})
 
-                    # Add source collection inside each record
-                    doc["source_collection"] = collection_name
+            if total_count == 0 and not include_empty:
+                continue
 
-                    # Clean NaN / Inf / ObjectId issues
-                    doc = clean_for_json(doc)
+            records = []
 
-                    data.append(doc)
+            cursor = mongo_collection.find().sort("_id", -1).limit(limit)
 
-                collections.append({
-                    "season": season,
-                    "year": str(year),
-                    "count": len(data),
-                    "data": data
-                })
+            for doc in cursor:
+                record = _record_for_fetch_all(
+                    doc,
+                    collection_name=collection_name,
+                    metadata_by_upload_id=metadata_by_upload_id,
+                )
+
+                records.append(clean_for_json(record))
+
+            total_records += len(records)
+
+            response_collections.append({
+                "collection_name": collection_name,
+                "source_collection": collection_name,
+                "count": total_count,
+                "returned_count": len(records),
+                "limited": total_count > len(records),
+                "data": records,
+            })
 
         return jsonify({
-            "succeess": True,
-            "collection": collections
+            "success": True,
+            "database": DB_NAME,
+            "total_collections": len(response_collections),
+            "total_returned_records": total_records,
+            "available_collections": existing_collections,
+            "collection": response_collections,
         }), 200
 
     except Exception as e:
         import traceback
         traceback.print_exc()
+
         return jsonify({
             "success": False,
-            "message": str(e)
+            "message": str(e),
         }), 500
-    
+
+
+def _should_include_collection(collection_name, include_users=False):
+    """
+    Controls which collections are returned by /fetch_all.
+
+    System collections are always skipped. User records are skipped by default
+    so the public dashboard does not accidentally expose account data.
+    """
+    if collection_name.startswith("system."):
+        return False
+
+    if collection_name == "users" and not include_users:
+        return False
+
+    return True
+
+
+def _load_upload_metadata_by_id():
+    """
+    Load upload metadata so flexible rows stored as values arrays can be
+    expanded back into their original uploaded columns.
+    """
+    metadata_by_upload_id = {}
+
+    try:
+        for meta in metadata_collection.find({}):
+            upload_id = meta.get("upload_id")
+
+            if upload_id:
+                metadata_by_upload_id[str(upload_id)] = meta
+    except Exception:
+        # If metadata cannot be read, fetch_all should still return documents.
+        pass
+
+    return metadata_by_upload_id
+
+
+def _record_for_fetch_all(doc, collection_name, metadata_by_upload_id):
+    """
+    Return a frontend-friendly record.
+
+    If the document is a flexible upload row with a values array, rebuild the
+    row as key-value pairs using the original uploaded column headers. This
+    lets the Flutter table show all uploaded columns instead of only showing
+    a single 'values' array.
+    """
+    original_doc = dict(doc)
+
+    upload_id = original_doc.get("upload_id")
+    values = original_doc.get("values")
+
+    if isinstance(values, list) and upload_id is not None:
+        meta = metadata_by_upload_id.get(str(upload_id), {})
+        columns = meta.get("columns", [])
+
+        if isinstance(columns, list) and columns:
+            rebuilt = {}
+
+            for index, value in enumerate(values):
+                if index < len(columns):
+                    key = str(columns[index])
+                else:
+                    key = f"Column {index + 1}"
+
+                # JSON objects cannot display duplicate keys. This keeps all
+                # values visible when uploaded files contain duplicate or blank
+                # headers. It affects only the API response, not the stored data.
+                if key.strip() == "":
+                    key = f"Column {index + 1}"
+
+                original_key = key
+                duplicate_counter = 2
+
+                while key in rebuilt:
+                    key = f"{original_key} ({duplicate_counter})"
+                    duplicate_counter += 1
+
+                rebuilt[key] = value
+
+            # Keep useful upload metadata but do not hide original data.
+            rebuilt["_id"] = original_doc.get("_id")
+            rebuilt["upload_id"] = upload_id
+            rebuilt["row_index"] = original_doc.get("row_index")
+            rebuilt["file_name"] = original_doc.get("file_name")
+            rebuilt["year"] = original_doc.get("year")
+            rebuilt["season"] = original_doc.get("season")
+            rebuilt["uploaded_at"] = original_doc.get("uploaded_at")
+            rebuilt["source_collection"] = collection_name
+
+            return rebuilt
+
+    original_doc["source_collection"] = collection_name
+
+    return original_doc
+
+
 @app.route("/fetch_users", methods=["GET"])
 def fetch_users():
     try:
@@ -1182,11 +1566,3 @@ def fetch_users():
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "message": str(e)}), 500
-
-
-
-
-
-
-
-

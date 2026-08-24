@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:cropbio/API/UploadCsv.dart';
 import 'package:cropbio/Widgets/CustomSnackbar.dart';
 import 'package:csv/csv.dart';
+import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -45,6 +47,10 @@ class _UploadSectionState extends State<UploadSection> {
   }
 
   Future<void> pickCsvFile() async {
+    await pickDataFile();
+  }
+
+  Future<void> pickDataFile() async {
     if (_isPickingFile) return;
 
     setState(() {
@@ -54,7 +60,7 @@ class _UploadSectionState extends State<UploadSection> {
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv'],
+        allowedExtensions: ['csv', 'xlsx', 'xls'],
         withData: true,
       );
 
@@ -75,15 +81,20 @@ class _UploadSectionState extends State<UploadSection> {
 
       final file = result.files.single;
       final bytes = file.bytes!;
-      final csvString = utf8.decode(bytes, allowMalformed: true);
-      final fields = const CsvToListConverter().convert(csvString);
+      final extension = _fileExtension(file.name);
 
-      if (fields.isEmpty) {
+      final List<List<String>> parsedData;
+
+      if (extension == "csv") {
+        parsedData = _parseCsvBytes(bytes);
+      } else if (extension == "xlsx" || extension == "xls") {
+        parsedData = _parseExcelBytes(bytes);
+      } else {
         if (!mounted) return;
 
         CustomSnackBar.show(
           context,
-          message: "The selected CSV file is empty",
+          message: "Please select a CSV or Excel file.",
           backgroundColor: Colors.orange,
           icon: Icons.warning_rounded,
           bottomMargin: 40,
@@ -93,23 +104,36 @@ class _UploadSectionState extends State<UploadSection> {
         return;
       }
 
-      final parsedData = fields
-          .map((row) => row.map((value) => value.toString()).toList())
-          .toList();
+      if (parsedData.isEmpty) {
+        if (!mounted) return;
+
+        CustomSnackBar.show(
+          context,
+          message: "The selected file is empty",
+          backgroundColor: Colors.orange,
+          icon: Icons.warning_rounded,
+          bottomMargin: 40,
+          leftMarginFactor: 0.8,
+        );
+
+        return;
+      }
 
       setState(() {
         pickedFile = file;
         csvData = parsedData;
-        sendType = _detectCsvType(parsedData);
+        sendType = "generic";
       });
 
-      debugPrint("Detected upload type: $sendType");
+      debugPrint("Flexible upload file selected: ${file.name}");
+      debugPrint("Columns detected: ${csvData.first.length}");
+      debugPrint("Rows detected: ${csvData.length > 1 ? csvData.length - 1 : 0}");
     } catch (e) {
       if (!mounted) return;
 
       CustomSnackBar.show(
         context,
-        message: "Failed to read CSV file: $e",
+        message: "Failed to read file: $e",
         backgroundColor: Colors.red,
         icon: Icons.error_outline_rounded,
         bottomMargin: 40,
@@ -124,28 +148,119 @@ class _UploadSectionState extends State<UploadSection> {
     }
   }
 
+  String _fileExtension(String fileName) {
+    final parts = fileName.split(".");
+    if (parts.length < 2) return "";
+
+    return parts.last.trim().toLowerCase();
+  }
+
+  List<List<String>> _parseCsvBytes(List<int> bytes) {
+    final csvString = utf8.decode(bytes, allowMalformed: true);
+    final fields = const CsvToListConverter(
+      shouldParseNumbers: false,
+    ).convert(csvString);
+
+    final rows = fields
+        .map((row) => row.map((value) => value.toString()).toList())
+        .toList();
+
+    return _normalizeTableRows(rows);
+  }
+
+  List<List<String>> _parseExcelBytes(List<int> bytes) {
+    final workbook = excel.Excel.decodeBytes(bytes);
+
+    if (workbook.tables.isEmpty) {
+      return [];
+    }
+
+    final sheet = workbook.tables.values.firstWhere(
+      (table) => table.rows.isNotEmpty,
+      orElse: () => workbook.tables.values.first,
+    );
+
+    final rows = sheet.rows.map((row) {
+      return row.map((cell) {
+        final value = cell?.value;
+        if (value == null) return "";
+
+        return value.toString();
+      }).toList();
+    }).toList();
+
+    return _normalizeTableRows(rows);
+  }
+
+  List<List<String>> _normalizeTableRows(List<List<String>> rows) {
+    final cleanedRows = rows
+        .map((row) => row.map((cell) => cell.trim()).toList())
+        .where((row) => row.any((cell) => cell.isNotEmpty))
+        .toList();
+
+    if (cleanedRows.isEmpty) {
+      return [];
+    }
+
+    final maxColumns = cleanedRows
+        .map((row) => row.length)
+        .fold<int>(0, (previous, current) => current > previous ? current : previous);
+
+    if (maxColumns == 0) {
+      return [];
+    }
+
+    final normalizedRows = cleanedRows.map((row) {
+      final normalized = List<String>.from(row);
+
+      while (normalized.length < maxColumns) {
+        normalized.add("");
+      }
+
+      return normalized;
+    }).toList();
+
+    final header = normalizedRows.first;
+    final headerCounts = <String, int>{};
+
+    for (int i = 0; i < header.length; i++) {
+      var columnName = header[i].trim();
+
+      if (columnName.isEmpty) {
+        columnName = "Column ${i + 1}";
+      }
+
+      final normalizedKey = columnName.toLowerCase();
+      final count = headerCounts[normalizedKey] ?? 0;
+      headerCounts[normalizedKey] = count + 1;
+
+      if (count > 0) {
+        columnName = "$columnName ${count + 1}";
+      }
+
+      header[i] = columnName;
+    }
+
+    return normalizedRows;
+  }
+
+  Uint8List _bytesForUpload() {
+    final csvString = const ListToCsvConverter().convert(csvData);
+    return Uint8List.fromList(utf8.encode(csvString));
+  }
+
+  String _fileNameForUpload() {
+    final originalName = pickedFile?.name ?? "uploaded_data";
+    final dotIndex = originalName.lastIndexOf(".");
+    final baseName = dotIndex > 0 ? originalName.substring(0, dotIndex) : originalName;
+
+    return "${baseName}_flexible_upload.csv";
+  }
+
   String _detectCsvType(List<List<String>> data) {
     if (data.isEmpty) return "none";
 
-    final normalizedHeaders = data.first.map(_normalizeHeader).toSet();
-
-    final bool looksLikeSummary =
-        normalizedHeaders.contains("croptype") &&
-        normalizedHeaders.contains("freshweight") &&
-        normalizedHeaders.contains("dryweight") &&
-        normalizedHeaders.contains("averageleafarea");
-
-    final bool looksLikePlots =
-        normalizedHeaders.contains("lat") &&
-        normalizedHeaders.contains("lon") &&
-        normalizedHeaders.contains("soilmoisture") &&
-        normalizedHeaders.contains("soiltemperature") &&
-        normalizedHeaders.contains("plantheight");
-
-    if (looksLikeSummary) return "summary";
-    if (looksLikePlots) return "plots";
-
-    return "none";
+    return "generic";
   }
 
   String _normalizeHeader(String value) {
@@ -161,36 +276,15 @@ class _UploadSectionState extends State<UploadSection> {
   }
 
   String get _uploadDestinationLabel {
-    switch (sendType) {
-      case "summary":
-        return "Overview Collection";
-      case "plots":
-        return "Plots Collection";
-      default:
-        return "Unidentified CSV Format";
-    }
+    return "Flexible Data Collection";
   }
 
   Color get _uploadDestinationColor {
-    switch (sendType) {
-      case "summary":
-        return primaryGreen;
-      case "plots":
-        return accentGreen;
-      default:
-        return Colors.orange;
-    }
+    return primaryGreen;
   }
 
   IconData get _uploadDestinationIcon {
-    switch (sendType) {
-      case "summary":
-        return Icons.table_chart_rounded;
-      case "plots":
-        return Icons.map_rounded;
-      default:
-        return Icons.warning_amber_rounded;
-    }
+    return Icons.dataset_rounded;
   }
 
   @override
@@ -301,7 +395,7 @@ class _UploadSectionState extends State<UploadSection> {
               ),
               const SizedBox(height: 3),
               Text(
-                "Upload, preview, validate, and store CropBio CSV files.",
+                "Upload, preview, and store CSV or Excel files with any columns.",
                 maxLines: isMobile ? 2 : 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.nunito(
@@ -322,7 +416,7 @@ class _UploadSectionState extends State<UploadSection> {
       return Column(
         children: [
           _professionalButton(
-            label: _isPickingFile ? "Selecting..." : "Upload CSV",
+            label: _isPickingFile ? "Selecting..." : "Upload File",
             icon: Icons.upload_file_rounded,
             backgroundColor: gold,
             foregroundColor: Colors.black,
@@ -351,11 +445,9 @@ class _UploadSectionState extends State<UploadSection> {
                     icon: Icons.storage_rounded,
                     backgroundColor: primaryGreen,
                     foregroundColor: Colors.white,
-                    onPressed: sendType == "none"
-                        ? null
-                        : () {
-                            showGlassDialog(context);
-                          },
+                    onPressed: () {
+                      showGlassDialog(context);
+                    },
                     fillWidth: true,
                     compact: true,
                   ),
@@ -373,7 +465,7 @@ class _UploadSectionState extends State<UploadSection> {
       alignment: WrapAlignment.end,
       children: [
         _professionalButton(
-          label: _isPickingFile ? "Selecting..." : "Upload CSV",
+          label: _isPickingFile ? "Selecting..." : "Upload File",
           icon: Icons.upload_file_rounded,
           backgroundColor: gold,
           foregroundColor: Colors.black,
@@ -393,11 +485,9 @@ class _UploadSectionState extends State<UploadSection> {
             icon: Icons.storage_rounded,
             backgroundColor: primaryGreen,
             foregroundColor: Colors.white,
-            onPressed: sendType == "none"
-                ? null
-                : () {
-                    showGlassDialog(context);
-                  },
+            onPressed: () {
+              showGlassDialog(context);
+            },
           ),
       ],
     );
@@ -502,7 +592,7 @@ class _UploadSectionState extends State<UploadSection> {
             ),
             const SizedBox(height: 16),
             Text(
-              "No CSV uploaded yet",
+              "No data file uploaded yet",
               textAlign: TextAlign.center,
               style: GoogleFonts.nunito(
                 color: lightText,
@@ -512,7 +602,7 @@ class _UploadSectionState extends State<UploadSection> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Select a CSV file to preview the data before saving it to the database.",
+              "Select a CSV or Excel file to preview all columns before saving them to the database.",
               textAlign: TextAlign.center,
               style: GoogleFonts.nunito(
                 color: mutedText,
@@ -624,7 +714,7 @@ class _UploadSectionState extends State<UploadSection> {
   }
 
   Widget _buildFileStatusCard(bool isMobile) {
-    final fileName = pickedFile?.name ?? "Selected CSV file";
+    final fileName = pickedFile?.name ?? "Selected data file";
 
     return Container(
       width: double.infinity,
@@ -668,9 +758,7 @@ class _UploadSectionState extends State<UploadSection> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  sendType == "none"
-                      ? "The file format was not recognized. Please check the CSV headers before storing."
-                      : "This file will be stored in the $_uploadDestinationLabel.",
+                  "This file will be stored in the $_uploadDestinationLabel. All columns will be uploaded.",
                   maxLines: isMobile ? 2 : 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
@@ -781,7 +869,7 @@ class _UploadSectionState extends State<UploadSection> {
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              "Store CSV Data",
+                              "Store Data File",
                               textAlign: TextAlign.center,
                               style: GoogleFonts.nunito(
                                 fontSize: isMobile ? 20 : 22,
@@ -791,7 +879,7 @@ class _UploadSectionState extends State<UploadSection> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              "Select the year and season before saving this file to the database.",
+                              "Select the year and season before saving this file. All columns will be uploaded.",
                               textAlign: TextAlign.center,
                               style: GoogleFonts.nunito(
                                 fontSize: 13,
@@ -1104,20 +1192,7 @@ class _UploadSectionState extends State<UploadSection> {
     if (pickedFile == null || pickedFile!.bytes == null) {
       CustomSnackBar.show(
         parentContext,
-        message: "No CSV file selected!",
-        backgroundColor: Colors.orange,
-        icon: Icons.warning_rounded,
-        bottomMargin: 40,
-        leftMarginFactor: 0.8,
-      );
-
-      return;
-    }
-
-    if (sendType == "none") {
-      CustomSnackBar.show(
-        parentContext,
-        message: "CSV format is not recognized. Please check the headers.",
+        message: "No data file selected!",
         backgroundColor: Colors.orange,
         icon: Icons.warning_rounded,
         bottomMargin: 40,
@@ -1130,19 +1205,15 @@ class _UploadSectionState extends State<UploadSection> {
     setUploading(true);
 
     try {
-      final response = sendType == "summary"
-          ? await uploadCropData(
-              pickedFile!.bytes!,
-              pickedFile!.name,
-              selectedYear!,
-              selectedSeason!,
-            )
-          : await uploadPlotData(
-              pickedFile!.bytes!,
-              pickedFile!.name,
-              selectedYear!,
-              selectedSeason!,
-            );
+      // Upload all columns exactly as previewed. Excel files are converted
+      // to CSV before upload so the database receives one flexible table.
+      // The backend endpoint must also support flexible columns/schemas.
+      final response = await uploadCropData(
+        _bytesForUpload(),
+        _fileNameForUpload(),
+        selectedYear!,
+        selectedSeason!,
+      );
 
       if (!mounted) return;
 

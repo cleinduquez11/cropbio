@@ -74,7 +74,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
   Future<void> _pickAndUploadCropData() async {
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['csv'],
+      allowedExtensions: ['csv', 'xlsx', 'xls'],
       withData: true,
     );
 
@@ -130,7 +130,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
   Future<void> _pickAndUploadPlotData() async {
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['csv'],
+      allowedExtensions: ['csv', 'xlsx', 'xls'],
       withData: true,
     );
 
@@ -196,10 +196,10 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
 
       if (!mounted) return;
 
-      final normalizedRecords = _normalizeCropResponse(data);
+      final records = _recordsFromResponse(data);
 
       setState(() {
-        _records = normalizedRecords;
+        _records = records;
         _loading = false;
       });
 
@@ -236,10 +236,10 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
 
       if (!mounted) return;
 
-      final normalizedUsers = _normalizeGenericResponse(data);
+      final users = _recordsFromResponse(data);
 
       setState(() {
-        _userRecords = normalizedUsers;
+        _userRecords = users;
         _userLoading = false;
       });
 
@@ -265,30 +265,17 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
     }
   }
 
-  // ================= NORMALIZATION / REMAPPING =================
+  // ================= DIRECT RECORD READING =================
+  //
+  // No normalization, remapping, renaming, or fixed-column conversion is done here.
+  // Every record is displayed using the exact keys returned by the backend.
 
-  List<Map<String, dynamic>> _normalizeCropResponse(dynamic response) {
-    final rawRecords = _extractCropRecordList(response);
-
-    return rawRecords.map<Map<String, dynamic>>((item) {
-      if (item is Map<String, dynamic>) {
-        return _normalizeSingleRecord(item);
-      }
-
-      if (item is Map) {
-        return _normalizeSingleRecord(Map<String, dynamic>.from(item));
-      }
-
-      return <String, dynamic>{};
-    }).where((record) => record.isNotEmpty).toList();
-  }
-
-  List<Map<String, dynamic>> _normalizeGenericResponse(dynamic response) {
-    final rawRecords = _extractGenericRecordList(response);
+  List<Map<String, dynamic>> _recordsFromResponse(dynamic response) {
+    final rawRecords = _extractRecordList(response);
 
     return rawRecords.map<Map<String, dynamic>>((item) {
       if (item is Map<String, dynamic>) {
-        return item;
+        return Map<String, dynamic>.from(item);
       }
 
       if (item is Map) {
@@ -299,7 +286,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
     }).where((record) => record.isNotEmpty).toList();
   }
 
-  List<dynamic> _extractCropRecordList(dynamic response) {
+  List<dynamic> _extractRecordList(dynamic response) {
     if (response == null) return [];
 
     if (response is List) {
@@ -307,39 +294,6 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
     }
 
     if (response is Map) {
-      if (response['collection'] is List) {
-        final List<dynamic> flattened = [];
-
-        for (final collectionItem in response['collection']) {
-          if (collectionItem is Map) {
-            final collectionMap = Map<String, dynamic>.from(collectionItem);
-
-            final sourceCollection = collectionMap['source_collection'] ??
-                collectionMap['collection_name'] ??
-                collectionMap['name'];
-
-            final collectionData = collectionMap['data'];
-
-            if (collectionData is List) {
-              for (final record in collectionData) {
-                if (record is Map) {
-                  final mappedRecord = Map<String, dynamic>.from(record);
-
-                  if (sourceCollection != null &&
-                      mappedRecord['source_collection'] == null) {
-                    mappedRecord['source_collection'] = sourceCollection;
-                  }
-
-                  flattened.add(mappedRecord);
-                }
-              }
-            }
-          }
-        }
-
-        return flattened;
-      }
-
       final possibleKeys = [
         'data',
         'records',
@@ -348,56 +302,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
         'items',
         'crop_samples',
         'cropSamples',
-      ];
-
-      for (final key in possibleKeys) {
-        final value = response[key];
-
-        if (value is List) {
-          return value;
-        }
-
-        if (value is Map) {
-          final nested = _extractCropRecordList(value);
-
-          if (nested.isNotEmpty) {
-            return nested;
-          }
-        }
-      }
-
-      for (final value in response.values) {
-        if (value is List) {
-          return value;
-        }
-
-        if (value is Map) {
-          final nested = _extractCropRecordList(value);
-
-          if (nested.isNotEmpty) {
-            return nested;
-          }
-        }
-      }
-    }
-
-    return [];
-  }
-
-  List<dynamic> _extractGenericRecordList(dynamic response) {
-    if (response == null) return [];
-
-    if (response is List) {
-      return response;
-    }
-
-    if (response is Map) {
-      final possibleKeys = [
-        'data',
-        'records',
         'users',
-        'results',
-        'items',
         'collection',
       ];
 
@@ -406,7 +311,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
 
         if (value is List) {
           if (key == 'collection') {
-            final List<dynamic> flattened = [];
+            final flattened = <dynamic>[];
 
             for (final item in value) {
               if (item is Map && item['data'] is List) {
@@ -423,7 +328,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
         }
 
         if (value is Map) {
-          final nested = _extractGenericRecordList(value);
+          final nested = _extractRecordList(value);
 
           if (nested.isNotEmpty) {
             return nested;
@@ -431,473 +336,32 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
         }
       }
 
-      for (final value in response.values) {
-        if (value is List) {
-          return value;
-        }
-
-        if (value is Map) {
-          final nested = _extractGenericRecordList(value);
-
-          if (nested.isNotEmpty) {
-            return nested;
-          }
-        }
-      }
+      // If no wrapper list exists, treat the map itself as one record.
+      return [response];
     }
 
     return [];
   }
 
-  Map<String, dynamic> _normalizeSingleRecord(Map<String, dynamic> record) {
-    final normalized = Map<String, dynamic>.from(record);
-    final plotInfo = _asMap(record['plot_info']);
-
-    _setIfMissing(
-      normalized,
-      'CODE',
-      _firstValue(record, ['CODE', 'Code', 'code']),
-    );
-
-    _setIfMissing(
-      normalized,
-      'CROP_TYPE',
-      _firstValue(record, ['CROP_TYPE', 'Crop', 'crop', 'crop_type']),
-    );
-
-    _setIfMissing(
-      normalized,
-      'FRESH_WEIGHT',
-      _numberOrNull(
-        _firstValue(record, ['FRESH_WEIGHT', 'FreshWeight', 'fresh_weight']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'DRY_WEIGHT',
-      _numberOrNull(
-        _firstValue(record, ['DRY_WEIGHT', 'DryWeight', 'dry_weight']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Average_Leaf_Area',
-      _numberOrNull(
-        _firstValue(record, ['Average_Leaf_Area', 'average_leaf_area']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Corrected_Leaf_Area_(CF=0.75)',
-      _numberOrNull(
-        _firstValue(record, [
-          'Corrected_Leaf_Area_(CF=0.75)',
-          'corrected_leaf_area',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'SPAD__values',
-      _numberOrNull(
-        _firstValue(record, ['SPAD__values', 'SPAD', 'spad']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Chl_A',
-      _numberOrNull(
-        _firstValue(record, ['Chl_A', 'ChlA', 'chl-a', 'chl_a', 'CHL_A']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Chl_B',
-      _numberOrNull(
-        _firstValue(record, ['Chl_B', 'ChlB', 'chl-b', 'chl_b', 'CHL_B']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Caretenoid',
-      _numberOrNull(
-        _firstValue(record, [
-          'Caretenoid',
-          'Carotenoid',
-          'carotenoid',
-          'caretenoid',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'LDMC',
-      _numberOrNull(
-        _firstValue(record, [
-          'LDMC',
-          'Leaf_Dry_Matter_Content_(LDMC)',
-          'leaf_dry_matter_content',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Chloropyll_Val',
-      _numberOrNull(
-        _firstValue(record, [
-          'Chloropyll_Val',
-          'Chloropyll__Value_(mg/m2)',
-          'Chlorophyll_Value',
-          'chlorophyll_value',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Leaf_Water_Concentration',
-      _numberOrNull(
-        _firstValue(record, [
-          'Leaf_Water_Concentration',
-          'leaf_water_concentration',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Equivalent_Water_Thickness_(EWT)',
-      _numberOrNull(
-        _firstValue(record, [
-          'Equivalent_Water_Thickness_(EWT)',
-          'EWT',
-          'equivalent_water_thickness',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Specific_Leaf_Area_(cm2/g)',
-      _numberOrNull(
-        _firstValue(record, [
-          'Specific_Leaf_Area_(cm2/g)',
-          'specific_leaf_area',
-        ]),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'LAI',
-      _numberOrNull(_firstValue(record, ['LAI', 'lai'])),
-    );
-
-    _setIfMissing(
-      normalized,
-      'DIFN',
-      _numberOrNull(_firstValue(record, ['DIFN', 'difn'])),
-    );
-
-    _setIfMissing(
-      normalized,
-      'MTA',
-      _numberOrNull(_firstValue(record, ['MTA', 'mta'])),
-    );
-
-    _setIfMissing(
-      normalized,
-      'SEM',
-      _numberOrNull(_firstValue(record, ['SEM', 'sem'])),
-    );
-
-    _setIfMissing(
-      normalized,
-      'SMP',
-      _numberOrNull(_firstValue(record, ['SMP', 'smp'])),
-    );
-
-    _setIfMissing(
-      normalized,
-      'SEL',
-      _numberOrNull(_firstValue(record, ['SEL', 'sel'])),
-    );
-
-    _setIfMissing(
-      normalized,
-      'FIELD',
-      _firstValue(record, ['FIELD', 'Field', 'field']),
-    );
-
-    _setIfMissing(
-      normalized,
-      'PLOT',
-      _firstValue(record, ['PLOT', 'Plot', 'plot']),
-    );
-
-    _setIfMissing(
-      normalized,
-      'PLANT_SAMPLE',
-      _numberOrNull(
-        _firstValue(record, ['PLANT_SAMPLE', 'PlantSample', 'plant_sample']),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Plant_Height',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Plant_Height', 'PLANT_HEIGHT', 'plant_height'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Plant',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Plant', 'PLANT_SPACING', 'plant_spacing'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Row',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Row', 'ROW_SPACING', 'row_spacing'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Temperature',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Temperature', 'SOIL_TEMPERATURE', 'soil_temperature'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Moisture',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Moisture', 'SOIL_MOISTURE', 'soil_moisture'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Type',
-      _firstValueFromRecordAndPlotInfo(
-        record,
-        plotInfo,
-        ['Type', 'SOIL_TYPE', 'soil_type'],
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Length',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Length', 'LENGTH', 'length'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'Width',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['Width', 'WIDTH', 'width'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'LAT',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['LAT', 'lat', 'latitude'],
-        ),
-      ),
-    );
-
-    _setIfMissing(
-      normalized,
-      'LON',
-      _numberOrNull(
-        _firstValueFromRecordAndPlotInfo(
-          record,
-          plotInfo,
-          ['LON', 'lon', 'longitude'],
-        ),
-      ),
-    );
-
-    final sourceCollection = normalized['source_collection'];
-
-    if (sourceCollection != null) {
-      final source = sourceCollection.toString();
-
-      final yearMatch = RegExp(r'(20\d{2})').firstMatch(source);
-
-      if (yearMatch != null) {
-        _setIfMissing(
-          normalized,
-          'YEAR',
-          int.tryParse(yearMatch.group(1)!),
-        );
-      }
-
-      final lowerSource = source.toLowerCase();
-
-      if (lowerSource.contains('dry')) {
-        _setIfMissing(normalized, 'SEASON', 'Dry Season');
-      } else if (lowerSource.contains('wet')) {
-        _setIfMissing(normalized, 'SEASON', 'Wet Season');
-      }
-    }
-
-    return normalized;
-  }
-
   bool _hasPlotData(Map<String, dynamic> record) {
-    final plotInfo = record['plot_info'];
-
-    if (plotInfo is Map && plotInfo.isNotEmpty) {
+    // No values are created or remapped here. This only checks whether the
+    // original record already appears to contain plot/location information.
+    if (record['plot_info'] is Map && (record['plot_info'] as Map).isNotEmpty) {
       return true;
     }
 
-    final plotKeys = [
-      'FIELD',
-      'PLOT',
-      'LAT',
-      'LON',
-      'Plant_Height',
-      'Plant',
-      'Row',
-      'Temperature',
-      'Moisture',
-      'Type',
-      'Length',
-      'Width',
-    ];
+    final lowerKeys = record.keys.map((key) => key.toString().toLowerCase()).toSet();
 
-    return plotKeys.any((key) {
-      final value = record[key];
-
-      if (value == null) return false;
-
-      if (value is String) return value.trim().isNotEmpty;
-
-      return true;
-    });
-  }
-
-  Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-
-    if (value is Map) {
-      return Map<String, dynamic>.from(value);
-    }
-
-    return {};
-  }
-
-  dynamic _firstValue(Map<String, dynamic> record, List<String> keys) {
-    for (final key in keys) {
-      if (record.containsKey(key) && record[key] != null) {
-        return record[key];
-      }
-    }
-
-    return null;
-  }
-
-  dynamic _firstValueFromRecordAndPlotInfo(
-    Map<String, dynamic> record,
-    Map<String, dynamic> plotInfo,
-    List<String> keys,
-  ) {
-    for (final key in keys) {
-      if (record.containsKey(key) && record[key] != null) {
-        return record[key];
-      }
-
-      if (plotInfo.containsKey(key) && plotInfo[key] != null) {
-        return plotInfo[key];
-      }
-    }
-
-    return null;
-  }
-
-  num? _numberOrNull(dynamic value) {
-    if (value == null) return null;
-
-    if (value is num) return value;
-
-    if (value is String) {
-      final cleaned = value.replaceAll(',', '').trim();
-
-      return num.tryParse(cleaned);
-    }
-
-    return null;
-  }
-
-  void _setIfMissing(
-    Map<String, dynamic> record,
-    String key,
-    dynamic value,
-  ) {
-    final currentValue = record[key];
-
-    final isCurrentMissing = currentValue == null ||
-        currentValue.toString().trim().isEmpty ||
-        currentValue.toString().trim().toLowerCase() == 'null';
-
-    if (isCurrentMissing && value != null) {
-      record[key] = value;
-    }
+    return lowerKeys.any(
+      (key) =>
+          key == 'plot' ||
+          key == 'field' ||
+          key == 'lat' ||
+          key == 'lon' ||
+          key == 'latitude' ||
+          key == 'longitude' ||
+          key.contains('plot'),
+    );
   }
 
   // ================= ACTIONS =================
@@ -928,10 +392,15 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
   void _handleMenuAction(String value) {
     if (value == "Refresh") {
       _refreshCurrentPage();
-    } else if (value == "Upload Crop Data") {
-      _pickAndUploadCropData();
-    } else if (value == "Upload Plot Data") {
-      _pickAndUploadPlotData();
+    } else if (value == "Upload Crop Data" || value == "Upload Plot Data") {
+      // The UploadSection owns its own selected-file and preview state.
+      // Do not pick/upload files here because doing so bypasses the preview table.
+      // Instead, open the Upload Data page and let the user select the file there.
+      setState(() {
+        _selectedIndex = 1;
+      });
+
+      _showActionMessage("Open Upload Data and select the CSV/Excel file there to preview it before storing");
     } else {
       _showActionMessage(value);
     }
@@ -946,7 +415,7 @@ class _CropbiodashboardState extends State<Cropbiodashboard> {
       case 0:
         return "Complete CropBio laboratory-derived crop and plot records";
       case 1:
-        return "Upload crop and plot CSV files";
+        return "Preview and upload CSV or Excel files with any columns";
       case 2:
         return "System users and access records";
       default:
